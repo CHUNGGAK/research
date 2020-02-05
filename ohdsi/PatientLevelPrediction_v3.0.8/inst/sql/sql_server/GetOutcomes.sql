@@ -69,8 +69,7 @@ SELECT DISTINCT row_id,
 FROM #cohort_person cohort_person
 INNER JOIN @outcome_database_schema.@outcome_table outcome
 	ON cohort_person.subject_id = outcome.subject_id
-WHERE DATEDIFF(DAY, outcome.cohort_start_date, cohort_person.cohort_start_date) <= days_from_obs_start
-	AND DATEDIFF(DAY, cohort_person.cohort_start_date, outcome.cohort_start_date) <= days_to_obs_end
+WHERE DATEDIFF(DAY, cohort_person.cohort_start_date, outcome.cohort_start_date) <= days_to_obs_end
 {@cdm_version == "4"} ? {	
 	AND outcome.cohort_concept_id IN (@outcome_ids)
 } : {
