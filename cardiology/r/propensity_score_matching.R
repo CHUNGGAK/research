@@ -1,4 +1,4 @@
-setwd('E:/Users/DLCG001/workspace/cardiology')
+setwd("E:/Users/DLCG001/workspace/cardiology")
 Sys.setlocale(category = "LC_ALL", locale = "English")
 
 library(data.table)
@@ -29,7 +29,7 @@ source("E:/Users/DLCG001/workspace/ltool/ltool.R")
 
 covariate_concept_id <- fread(file.path("data", "covariate_concept_id", "covariate_concept_id.csv"))
 
-includedCovariateConceptIds = c(8532, 8507, # ì„±ë³„
+includedCovariateConceptIds = c(8532, 8507, # ?„±ë³?
                                 4245997, # BMI
                                 3005424, # BSA
                                 2000000118, #eGFR
@@ -43,7 +43,7 @@ covariateSettings <- createCovariateSettings(useDemographicsGender = TRUE,
                                              includedCovariateConceptIds = includedCovariateConceptIds,
                                              addDescendantsToInclude = TRUE)
 
-cohort_df <- data.frame(cohort_id = c(20011700, 20011702, 20011704),
+cohort_df <- data.frame(cohort_id = c(24470000, 24470002, 24470004),
                         cohort_name = c("statin", "ras", "bis"))
 
 connectionDetails <- createConnectionDetails(dbms = dbms,
@@ -52,7 +52,7 @@ connectionDetails <- createConnectionDetails(dbms = dbms,
                                              password = password)
 
 exposureTable <- "lcg_cohort"
-outcomeTable <- "lcg_cohort"
+outcomeTable <- "cohort"
 outcomeIds <- 122 # death
 
 output_path <- file.path("output", "propensity_score_matching")
@@ -71,12 +71,10 @@ for (cohort_var in cohort_df$cohort_id) {
     path.assistant(plot_path)
     path.assistant(matching_data_path)
     
-    estimation_data_name <- file.path(estimation_data_path,
-                           paste0(var_name, "_estimation_data"))
     matching_data_name <- file.path(matching_data_path,
-                               paste0(var_name, "_matching_group.csv"))
+                                    paste0(var_name, "_matching_group.csv"))
     
-    if (!file.exists(estimation_data_name)) {
+    if (!file.exists(file.path(estimation_data_path, "cohorts.rds"))) {
         cohortMethodData <- getDbCohortMethodData(connectionDetails = connectionDetails,
                                                   cdmDatabaseSchema = cdmDatabaseSchema,
                                                   oracleTempSchema = oracleTempSchema,
@@ -99,7 +97,7 @@ for (cohort_var in cohort_df$cohort_id) {
         
         saveCohortMethodData(cohortMethodData, estimation_data_path)
     } else {
-        cohortMEthodData <- loadCohortMethodData(estimation_data_path)
+        cohortMethodData <- loadCohortMethodData(estimation_data_path)
     }
     
     studyPop <- CohortMethod::createStudyPopulation(cohortMethodData = cohortMethodData,
@@ -158,9 +156,10 @@ for (cohort_var in cohort_df$cohort_id) {
     plotCovariateBalanceOfTopVariables(balance,
                                        fileName = file.path(plot_path, paste0(var_name, "_balance_scatter_plot.png")))
     
-    drawAttritionDiagram(matchedPop,
-                         fileName = file.path(plot_path, paste0(var_name, "_attrition_diagram.png")))
-    
+    drawAttritionDiagram(matchedPop, n = "person",
+                         fileName = file.path(plot_path, paste0(var_name, "_attrition_diagram_person.png")))
+    drawAttritionDiagram(matchedPop, n = "expousre",
+                         fileName = file.path(plot_path, paste0(var_name, "_attrition_diagram_exposure.png")))
     
     # Merge plots -------------------------------------------------------------
     
@@ -172,5 +171,5 @@ for (cohort_var in cohort_df$cohort_id) {
     # 
     # ggsave(file.path(output_path, paste0(var_name, "_matching_information.png")), g,
     #        width = 30, height = 56, units = "cm")
-    # width ë‹¨ìœ„ 10, height ë‹¨ìœ„ 14
+    # width ?‹¨?œ„ 10, height ?‹¨?œ„ 14
 }
