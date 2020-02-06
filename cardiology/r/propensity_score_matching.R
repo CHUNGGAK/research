@@ -29,7 +29,7 @@ source("E:/Users/DLCG001/workspace/ltool/ltool.R")
 
 covariate_concept_id <- fread(file.path("data", "covariate_concept_id", "covariate_concept_id.csv"))
 
-includedCovariateConceptIds = c(8532, 8507, # ?„±ë³?
+includedCovariateConceptIds = c(8532, 8507, # Gender
                                 4245997, # BMI
                                 3005424, # BSA
                                 2000000118, #eGFR
@@ -53,7 +53,7 @@ connectionDetails <- createConnectionDetails(dbms = dbms,
 
 exposureTable <- "lcg_cohort"
 outcomeTable <- "cohort"
-outcomeIds <- 122 # death
+outcomeIds <- 122 # Death
 
 output_path <- file.path("output", "propensity_score_matching")
 
@@ -171,5 +171,5 @@ for (cohort_var in cohort_df$cohort_id) {
     # 
     # ggsave(file.path(output_path, paste0(var_name, "_matching_information.png")), g,
     #        width = 30, height = 56, units = "cm")
-    # width ?‹¨?œ„ 10, height ?‹¨?œ„ 14
+    # width ?????? 10, height ?????? 14
 }
