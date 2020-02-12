@@ -23,7 +23,28 @@ covSet1 <- createCovariateSettings(useDemographicsGender = TRUE,
                                    useDcsi = TRUE,
                                    useChads2 = TRUE,
                                    useChads2Vasc = TRUE)
-covariateSettingList <- list(covSet1)
+
+covSet2 <- createCovariateSettings(useDemographicsGender = TRUE,
+                                   useConditionGroupEraMediumTerm = TRUE,
+                                   useDrugGroupEraMediumTerm = TRUE,
+                                   useConditionOccurrenceMediumTerm = TRUE,
+                                   useDistinctConditionCountMediumTerm = TRUE,
+                                   useVisitConceptCountMediumTerm = TRUE,
+                                   useCharlsonIndex = TRUE,
+                                   useDcsi = TRUE,
+                                   useChads2 = TRUE,
+                                   useChads2Vasc = TRUE)
+covSet3 <- createCovariateSettings(useDemographicsGender = TRUE,
+                                   useConditionGroupEraShortTerm = TRUE,
+                                   useDrugGroupEraShortTerm = TRUE,
+                                   useConditionOccurrenceShortTerm = TRUE,
+                                   useDistinctConditionCountShortTerm = TRUE,
+                                   useVisitConceptCountShortTerm = TRUE,
+                                   useCharlsonIndex = TRUE,
+                                   useDcsi = TRUE,
+                                   useChads2 = TRUE,
+                                   useChads2Vasc = TRUE)
+covariateSettingList <- list(covSet1, covSet2, covSet3)
 
 gbm <- setGradientBoostingMachine()
 lr <- setLassoLogisticRegression()
