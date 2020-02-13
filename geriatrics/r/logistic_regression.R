@@ -5,6 +5,7 @@ Sys.setlocale(category = "LC_ALL", locale = "English")
 library(data.table)
 library(tidyverse)
 library(PatientLevelPrediction)
+library(xtable)
 
 source("E:/Users/DLCG001/workspace/ltool/ltool.R")
 
@@ -209,14 +210,18 @@ for (i in colnames(continuous_indep)) {
 }
 
 
-# Analysis ----------------------------------------------------------------
+# Multivariate linear regression ----------------------------------------------------------------
 split_index <- sample(1:nrow(datum), size = round(nrow(datum) * 0.25))
 train <- datum[split_index, ]
 test <- datum[-split_index, ]
 
-fit <- glm(outcome_value ~ male + depressive_disorder + chads2 + chads2vasc +
-               charlson_index + dcsi + inpatient + outpatient + emergency +
-               laboratory + height + weight + ingredient_count, family = "binomial", data = train)
+indep <- c("male", "depressive_disorder", "chads2", "chads2vasc", "charlson_index",
+           "dcsi", "inpatient", "outpatient", "emergency", "laboratory", "height",
+           "weight", "ingredient_count")
+dep <- "outcome_value"
+
+fit <- glm(as.formula(paste(dep, paste(indep, collapse = "+"), sep = "~")),
+           family = "binomial", data = train)
 p <- predict(fit, newdata = test, type = "response")
 pr <- prediction(p, test$outcome_value)
 prf <- performance(pr, measure = "tpr", x.measure = "fpr")
@@ -227,3 +232,64 @@ plot(prf)
 lines(x = c(0, 1), y = c(0, 1))
 text(0.9, 0.1, labels = paste("AUC =", round(auc@y.values[[1]], 4)))
 dev.off()
+
+
+# Univariate linear regression -------------------------------------------
+break_list <- list(list("inpatient", c(-Inf, 1, Inf), c("> 1", "< 1")),
+                   list("outpatient", c(-Inf, 2, 4, 6, 8, 10, Inf), c("> 2", "2-4", "4-6", "6-8", "8-10", "< 10")),
+                   list("emergency", c(-Inf, 1, Inf), c("> 1", "< 1")),
+                   list("laboratory", c(-Inf, 1, 3, 5, Inf), c("> 1", "1-3", "3-5", "< 5")),
+                   list("height",
+                        c(-Inf, 150, 155, 160, 165, Inf),
+                        c("< 150", "150-155", "155-160", "160-165", "> 165")),
+                   list("weight",
+                        c(-Inf, 50, 55, 60, 65, 70, Inf),
+                        c("< 50", "50-55", "55-60", "60-65", "65-70","> 70")),
+                   list("ingredient_count",
+                        c(-Inf, 3, 6, 9, 12, 15, 18, Inf),
+                        c("> 3", "3-6", "6-9", "9-12", "12-15", "15-18", "< 18")))
+
+break_list <- list(inpatient = list(breaks = c(-Inf, 1, Inf),
+                                      labels = c("> 1", "< 1")),
+                   outpatient = list(breaks = c(-Inf, 2, 4, 6, 8, 10, Inf),
+                                       labels = c("> 2", "2-4", "4-6", "6-8", "8-10", "< 10")),
+                   emergency = list(breaks = c(-Inf, 1, Inf), labels = c("> 1", "< 1")),
+                   laboratory = list(breaks = c(-Inf, 1, 3, 5, Inf), labels = c("> 1", "1-3", "3-5", "< 5")),
+                   height = list(breaks = c(-Inf, 150, 155, 160, 165, Inf),
+                                 labels = c("< 150", "150-155", "155-160", "160-165", "> 165")),
+                   weight = list(breaks = c(-Inf, 50, 55, 60, 65, 70, Inf),
+                        labels = c("< 50", "50-55", "55-60", "60-65", "65-70","> 70")),
+                   ingredient_count = list(breaks = c(-Inf, 3, 6, 9, 12, 15, 18, Inf),
+                                           labels = c("> 3", "3-6", "6-9", "9-12", "12-15", "15-18", "< 18")))
+
+incidence_plot_path <- file.path(output_path, "incidence_plot")
+path_assistant(incidence_plot_path)
+
+sink(file.path(output_path, "univariate_linear_regression_result.html"))
+for (indep_var in indep[3:length(indep)]) {
+    cat(indep_var, "univariate linear regression")
+    uni_lr_result <- glm(as.formula(paste(dep, indep_var, sep = "~")),
+                         family = "binomial", data = train)
+    uni_lr_result %>% xtable() %>% print.xtable(type = "html")
+    cat(rep("<br>", 3))
+    
+    if (indep_var %in% c("chads2", "chads2vasc", "charlson_index", "dcsi")) {
+        plot_data <- p_datum
+    } else {
+        plot_data <- p_datum %>%
+            mutate(!!indep_var := cut(p_datum[[indep_var]],
+                                breaks = break_list[[indep_var]]$breaks,
+                                labels = break_list[[indep_var]]$labels))
+    }
+    plot_data %>% 
+        group_by_at(indep_var) %>% 
+        summarise(outcome = sum(outcome_value) / n(),
+                  non_outcome = 1 - outcome) %>% 
+        gather(key = "group", value = "incidence", "outcome", "non_outcome") %>% 
+        ggplot(aes_string(x = indep_var, y = "incidence", fill = "group")) +
+        geom_bar(stat = "identity") +
+        geom_text(aes(label = round(incidence, 2))) +
+        theme(legend.position = "bottom", legend.title = element_blank())
+    ggsave(file.path(output_path, paste0(indep_var, "_incidence_plot.png")))
+}
+sink()
