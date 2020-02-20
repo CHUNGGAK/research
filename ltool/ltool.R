@@ -15,3 +15,19 @@ remove_outlier_with_qti <- function(datum, na.rm = TRUE) {
     output[datum > (qti[2] + a)] <- NA
     return(output)
 }
+
+print_t_test <- function(x, y) {
+    output <- t.test(x, y)
+    
+    data.table(Method = output$method,
+               t = output$statistic,
+               degrees_of_freedom = output$parameter,
+               p_value = output$p.value,
+               alternative_hypothesis = output$alternative,
+               confidence_interval_lower = output$conf.int[1],
+               confidence_interval_upper = output$conf.int[2],
+               mean_of_x = output$estimate[1],
+               mean_of_y = output$estimate[2]) %>% 
+        xtable() %>% 
+        print.xtable(type = "html")
+}
