@@ -16,9 +16,10 @@ remove_outlier_with_qti <- function(datum, na.rm = TRUE) {
     return(output)
 }
 
-print_t_test <- function(x, y) {
-    output <- t.test(x, y)
+print_t_test <- function(x, y, title, white_space = 2) {
+    cat(title)
     
+    output <- t.test(x, y)
     data.table(Method = output$method,
                t = output$statistic,
                degrees_of_freedom = output$parameter,
@@ -30,4 +31,39 @@ print_t_test <- function(x, y) {
                mean_of_y = output$estimate[2]) %>% 
         xtable() %>% 
         print.xtable(type = "html")
+    
+    cat(rep("<br>", white_space))
+}
+
+print_chisq_test <-  function(x, title, white_space = 2) {
+    cat(title)
+    
+    output <- chisq.test(x)
+    data.frame(Method = output$method,
+         X_squared = output$statistic,
+         degrees_of_freedom = output$parameter,
+         p_value = output$p.value) %>% 
+        xtable() %>% 
+        print.xtable(type = "html")
+    cat("<br>")
+    
+    cat("Observed(Expected)")
+    matrix(c(paste0(output$observed[1], "(", round(output$expected[1]), ")"),
+             paste0(output$observed[2], "(", round(output$expected[2]), ")"),
+             paste0(output$observed[3], "(", round(output$expected[3]), ")"),
+             paste0(output$observed[4], "(", round(output$expected[4]), ")")
+           ), ncol = 2, dimnames = list(Sex = c("Female", "Male"), Drug = c("False", "True"))) %>% 
+        xtable() %>% 
+        print.xtable(type = "html")
+    cat("<br>")
+    
+    cat("Residuals(Stdres)")
+    matrix(c(paste0(output$residuals[1], "(", round(output$stdres[1]), ")"),
+             paste0(output$residuals[2], "(", round(output$stdres[2]), ")"),
+             paste0(output$residuals[3], "(", round(output$stdres[3]), ")"),
+             paste0(output$residuals[4], "(", round(output$stdres[4]), ")")
+    ), ncol = 2, dimnames = list(Sex = c("Female", "Male"), Drug = c("False", "True"))) %>% 
+        xtable() %>% 
+        print.xtable(type = "html")
+    cat(rep("<br>", white_space))
 }

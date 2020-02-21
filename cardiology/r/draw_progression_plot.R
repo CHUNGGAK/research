@@ -66,7 +66,7 @@ for (drug_var in c("statin", "ras", "bis")) {
             mutate(VALUE_AS_NUMBER = remove_outlier(VALUE_AS_NUMBER),
                    progression_rate = remove_outlier(progression_rate)) %>% 
             ggplot(aes(x = VALUE_AS_NUMBER, y = progression_rate)) +
-            geom_smooth(color = "statin", se = FALSE) +
+            geom_smooth(color = treatment, se = FALSE) +
             theme_classic() + 
             labs(title = plot_name,
                  x = paste("Baseline", measurement_name),

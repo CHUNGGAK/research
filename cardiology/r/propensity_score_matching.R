@@ -1,4 +1,4 @@
-setwd("E:/Users/DLCG001/workspace/cardiology")
+setwd('E:/Users/DLCG001/workspace/cardiology')
 Sys.setlocale(category = "LC_ALL", locale = "English")
 
 library(data.table)
@@ -29,7 +29,7 @@ source("E:/Users/DLCG001/workspace/ltool/ltool.R")
 
 covariate_concept_id <- fread(file.path("data", "covariate_concept_id", "covariate_concept_id.csv"))
 
-includedCovariateConceptIds = c(8532, 8507, # Gender
+includedCovariateConceptIds = c(8532, 8507, # 성별
                                 4245997, # BMI
                                 3005424, # BSA
                                 2000000118, #eGFR
@@ -53,11 +53,11 @@ connectionDetails <- createConnectionDetails(dbms = dbms,
 
 exposureTable <- "lcg_cohort"
 outcomeTable <- "cohort"
-outcomeIds <- 122 # Death
+outcomeIds <- 122 # death
 
 output_path <- file.path("output", "propensity_score_matching")
 
-path.assistant(output_path)
+path_assistant(output_path)
 
 for (cohort_var in cohort_df$cohort_id) {
     var_name <- cohort_df$cohort_name[match(cohort_var, cohort_df$cohort_id)]
@@ -66,10 +66,10 @@ for (cohort_var in cohort_df$cohort_id) {
     plot_path <- file.path(var_path, "plot")
     matching_data_path <- file.path(var_path, "matching_data")
     
-    path.assistant(var_path)
-    path.assistant(estimation_data_path)
-    path.assistant(plot_path)
-    path.assistant(matching_data_path)
+    path_assistant(var_path)
+    path_assistant(estimation_data_path)
+    path_assistant(plot_path)
+    path_assistant(matching_data_path)
     
     matching_data_name <- file.path(matching_data_path,
                                     paste0(var_name, "_matching_group.csv"))
@@ -78,8 +78,8 @@ for (cohort_var in cohort_df$cohort_id) {
         cohortMethodData <- getDbCohortMethodData(connectionDetails = connectionDetails,
                                                   cdmDatabaseSchema = cdmDatabaseSchema,
                                                   oracleTempSchema = oracleTempSchema,
-                                                  targetId = cohort_var + 1,
-                                                  comparatorId = cohort_var,
+                                                  targetId = cohort_var, # treatment = 0
+                                                  comparatorId = cohort_var + 1, # treatment = 1
                                                   outcomeIds = outcomeIds,
                                                   studyStartDate = "",
                                                   studyEndDate = "",
@@ -156,10 +156,10 @@ for (cohort_var in cohort_df$cohort_id) {
     plotCovariateBalanceOfTopVariables(balance,
                                        fileName = file.path(plot_path, paste0(var_name, "_balance_scatter_plot.png")))
     
+    drawAttritionDiagram(matchedPop, n = "exposure",
+                         fileName = file.path(plot_path, paste0(var_name, "_attrition_diagram_exposure.png")))
     drawAttritionDiagram(matchedPop, n = "person",
                          fileName = file.path(plot_path, paste0(var_name, "_attrition_diagram_person.png")))
-    drawAttritionDiagram(matchedPop, n = "expousre",
-                         fileName = file.path(plot_path, paste0(var_name, "_attrition_diagram_exposure.png")))
     
     # Merge plots -------------------------------------------------------------
     
@@ -171,5 +171,5 @@ for (cohort_var in cohort_df$cohort_id) {
     # 
     # ggsave(file.path(output_path, paste0(var_name, "_matching_information.png")), g,
     #        width = 30, height = 56, units = "cm")
-    # width ?????? 10, height ?????? 14
+    # width 단위 10, height 단위 14
 }
