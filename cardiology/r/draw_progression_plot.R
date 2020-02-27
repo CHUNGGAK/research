@@ -2,91 +2,118 @@ setwd("E:/Users/DLCG001/workspace/cardiology")
 
 library(tidyverse)
 library(data.table)
+library(DatabaseConnector)
+library(lubridate)
+library(cowplot)
 
-remove_outlier <- function(x, na.rm) {
-    qti <- quantile(x, probs = c(0.25, 0.75), na.rm = TRUE)
-    co <- 1.5 * IQR(x)
-    y <- x
-    y[x < qti[1] - co] <- NA
-    y[x > qti[2] + co] <- NA
-    return(y)
-}
+source("E:/Users/DLCG001/workspace/ltool/ltool.R")
 
 output_path <- "output/progression_plot"
 psm_output_path <- file.path(output_path, "psm")
 
-if (!dir.exists(output_path)) {
-    dir.create(output_path, recursive = TRUE)
-}
+path_assistant(psm_output_path)
 
-if (!dir.exists(psm_output_path)) {
-    dir.create(psm_output_path, recursive = TRUE)
-}
+connectionDetails <- createConnectionDetails(dbms = dbms,
+                                             server = server,
+                                             user = user,
+                                             password = password)
+conn <- connect(connectionDetails)
 
-datum <- fread("data/data.csv") %>% 
-    select(PERSON_ID, MEASUREMENT_CONCEPT_ID, MEASUREMENT_DATE, VALUE_AS_NUMBER,
-           GAP_VALUE, STATIN_DATE, RAS_DATE, BIS_DATE, BASE_LINE, FOLLOW_UP,
-           GAP_DAY) %>% 
-    mutate(PERSON_ID = as.factor(PERSON_ID),
-           MEASUREMENT_CONCEPT_ID = as.factor(MEASUREMENT_CONCEPT_ID),
-           MEASUREMENT_DATE = as.Date(MEASUREMENT_DATE, "%Y/%m/%d"),
-           STATIN_DATE = as.Date(STATIN_DATE, format = "%Y/%m/%d"),
-           RAS_DATE = as.Date(RAS_DATE, format = "%Y/%m/%d"),
-           BIS_DATE = as.Date(BIS_DATE, format = "%Y/%m/%d"),
-           BASE_LINE = as.logical(BASE_LINE),
-           FOLLOW_UP = as.logical(FOLLOW_UP)) %>% 
-    filter(BASE_LINE == TRUE & FOLLOW_UP == TRUE) %>%
-    mutate(statin = if_else(is.na(STATIN_DATE) | STATIN_DATE > MEASUREMENT_DATE, FALSE, TRUE),
-           ras = if_else(is.na(RAS_DATE) | RAS_DATE > MEASUREMENT_DATE, FALSE, TRUE),
-           bis = if_else(is.na(BIS_DATE) | BIS_DATE > MEASUREMENT_DATE, FALSE, TRUE),
+r_data <- querySql(conn, 
+                   "SELECT person_id, to_char(measurement_date, 'yyyy') - year_of_birth age, gender_concept_id,
+                  measurement_source_value, measurement_date, value_as_number,
+                  statin_date, ras_date, bis_date, a_date, b_date, gap_day, gap_value
+                  FROM gr2457.meas_re")
+
+datum <- r_data %>% 
+    mutate(PERSON_ID = as.character(PERSON_ID),
+           MEASUREMENT_DATE = ymd(MEASUREMENT_DATE),
+           STATIN_DATE = ymd(STATIN_DATE),
+           RAS_DATE = ymd(RAS_DATE),
+           BIS_DATE = ymd(BIS_DATE),
+           baseline = ifelse(!is.na(A_DATE), TRUE, FALSE),
+           follow_up = ifelse(!is.na(B_DATE), TRUE, FALSE),
+           statin = ifelse(is.na(STATIN_DATE) | STATIN_DATE > MEASUREMENT_DATE, FALSE, TRUE),
+           ras = ifelse(is.na(RAS_DATE) | RAS_DATE > MEASUREMENT_DATE, FALSE, TRUE),
+           bis = ifelse(is.na(BIS_DATE) | BIS_DATE > MEASUREMENT_DATE, FALSE, TRUE),
            progression_rate = GAP_VALUE / GAP_DAY * 365) %>% 
-    select(PERSON_ID, MEASUREMENT_CONCEPT_ID, MEASUREMENT_DATE, VALUE_AS_NUMBER,
-           statin, ras, bis, progression_rate)
+    filter(follow_up == TRUE) %>%
+    select(PERSON_ID, MEASUREMENT_SOURCE_VALUE, MEASUREMENT_DATE, VALUE_AS_NUMBER, statin, ras, bis,
+           progression_rate) %>% 
+    as.data.table()
 
-measurement_df <- data.frame(id = c(3028570, 21493999, 3003445),
-                             name = c('AV Vmax', 'AV meanPG', 'AV area'))
+measurement_list <- distinct(datum, MEASUREMENT_SOURCE_VALUE)[c(1, 5, 9), MEASUREMENT_SOURCE_VALUE]
 
 for (drug_var in c("statin", "ras", "bis")) {
-    p_data <- fread(file.path("output",
-                              "propensity_score_matching",
-                              paste(drug_var, "matchedPop.csv", sep = "_"))) %>% 
-        select(subjectId, treatment, cohortStartDate) %>%
-        mutate(subjectId = as.factor(str_trim(subjectId, side = "both")),
-               treatment = as.logical(treatment),
-               cohortStartDate = as.Date(cohortStartDate, "%Y-%m-%d")) %>% 
-        inner_join(datum, by = c("subjectId" = "PERSON_ID",
-                                   setNames(drug_var, "treatment")))
+    psm_data <- fread(file.path("output/propensity_score_matching",
+                                drug_var,
+                                "matching_data",
+                                paste(drug_var, "matching_group.csv", sep ="_"))) %>% 
+        select(subjectId, treatment, cohortStartDate) %>% 
+        mutate(subjectId = as.character(subjectId),
+               treatment = ifelse(treatment == 0, FALSE, TRUE),
+               cohortStartDate = ymd(cohortStartDate)) %>% 
+        inner_join(datum,
+                   by = c("subjectId" = "PERSON_ID",
+                          "cohortStartDate" = "MEASUREMENT_DATE",
+                          setNames(drug_var, "treatment")))
     
-    for (measurement_var in measurement_df$id) {
-        measurement_name <-  measurement_df[measurement_df$id == measurement_var, "name"]
-        plot_name <- paste(drug_var, measurement_name, 'Progression Plot')
+    for (measurement_var in measurement_list) {
+        plot_name <- paste(drug_var, measurement_var, 'Progression Plot')
         
-        datum %>% 
-            filter(MEASUREMENT_CONCEPT_ID == measurement_var) %>% 
-            mutate(VALUE_AS_NUMBER = remove_outlier(VALUE_AS_NUMBER),
-                   progression_rate = remove_outlier(progression_rate)) %>% 
-            ggplot(aes(x = VALUE_AS_NUMBER, y = progression_rate)) +
-            geom_smooth(color = treatment, se = FALSE) +
-            theme_classic() + 
-            labs(title = plot_name,
-                 x = paste("Baseline", measurement_name),
-                 y = paste("Progression rate(AV", measurement_name,"/ year)"))
+        # Draw graphs before PSM --------------------------------------------------
+        p_data <- datum %>%  
+            filter(MEASUREMENT_SOURCE_VALUE == measurement_var) %>% 
+            mutate(VALUE_AS_NUMBER = remove_outlier_with_qti(VALUE_AS_NUMBER),
+                   progression_rate = remove_outlier_with_qti(progression_rate))
         
-        ggsave(file.path(output_path, paste0(plot_name, ".png")))
-        
-        p_data %>% 
-            filter(MEASUREMENT_CONCEPT_ID == measurement_var) %>% 
-            mutate(VALUE_AS_NUMBER = remove_outlier(VALUE_AS_NUMBER),
-                   progression_rate = remove_outlier(progression_rate)) %>% 
+        progression_plot <- p_data %>% 
             ggplot(aes_string(x = "VALUE_AS_NUMBER", y = "progression_rate",
                               linetype = drug_var)) +
-            geom_smooth(color = "black", linetype = treatment, se = FALSE) +
-            geom_point() +
-            theme_classic() + 
+            geom_smooth(color = "black") +
+            theme_bw() + 
             labs(title = plot_name,
-                 x = paste("Baseline", measurement_name),
-                 y = paste("Progression rate(AV", measurement_name,"/ year)"))
+                 x = paste("Baseline", measurement_var),
+                 y = paste("Progression rate(AV", measurement_var,"/ year)"))
         
-        ggsave(file.path(psm_output_path, paste0("psm_", plot_name, ".png")))
+        density_plot <- p_data %>% 
+            ggplot(aes_string(x = "VALUE_AS_NUMBER", linetype = drug_var)) +
+            geom_density() +
+            labs(title = paste(drug_var, measurement_var, "Density Plot"),
+                 x = measurement_var) +
+            theme_bw()
+        
+        plot_grid(progression_plot, density_plot,
+                  ncol = 1, rel_heights = c(2, 1))
+        ggsave(file.path(output_path, paste0(plot_name, ".png")),
+               width = 18, height = 23, units = "cm")
+        
+        
+        # Draw graphs after PSM ---------------------------------------------------
+        p_psm_data <- psm_data %>% 
+            filter(MEASUREMENT_SOURCE_VALUE == measurement_var) %>% 
+            mutate(VALUE_AS_NUMBER = remove_outlier_with_qti(VALUE_AS_NUMBER),
+                   progression_rate = remove_outlier_with_qti(progression_rate))
+        
+        psm_progression_plot <- p_psm_data %>% 
+            ggplot(aes(x = VALUE_AS_NUMBER, y = progression_rate,
+                       linetype = treatment)) +
+            geom_smooth(color = "black") +
+            theme_bw() + 
+            labs(title = plot_name,
+                 x  = paste("Baseline", measurement_var),
+                 y = paste("Progression rate(AV", measurement_var,"/ year)"))
+        
+        psm_density_plot <- p_psm_data %>% 
+            ggplot(aes(x = VALUE_AS_NUMBER, linetype = treatment)) +
+            geom_density() +
+            labs(title = paste(drug_var, measurement_var, "Density Plot"),
+                 x = measurement_var) +
+            theme_bw()
+        
+        plot_grid(psm_progression_plot, psm_density_plot,
+                  ncol = 1, rel_heights = c(2, 1))
+        ggsave(file.path(psm_output_path, paste0("psm_", plot_name, ".png")),
+               width = 18, height = 23, units = "cm")
     }
 }
