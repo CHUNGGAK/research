@@ -2,6 +2,7 @@ library(CohortMethod)
 library(tidyverse)
 library(xtable)
 library(data.table)
+library(scales)
 
 # Path assistant ----------------------------------------------------------
 path_assistant <- function(path) {
@@ -177,4 +178,48 @@ view_cm <- function(result, output_folder,
                     fileName = file.path(result_file_path,
                                          paste(outcome_var, "time_to_event_plot.png", sep = "_")))
   }
+}
+
+
+# Create frequency and prop table -----------------------------------------
+table_freq_prop <- function(x, print_option = FALSE, margin_option = FALSE) {
+    if(class(x) != "table") {
+        stop("table_freq_prop function requires table class input")
+    }
+    
+    prop <- prop.table(x, margin = margin_option)
+    
+    for (i in 1:length(x)) {
+        x[i] <- paste0(x[i], "(", percent(prop[i]), ")")
+    }
+    
+    if (print_option == FALSE) {
+        return(x)
+    } else {
+        addtorow <- list()
+        addtorow$pos <- list(0, 0)
+        addtorow$command <- c(paste("<tr> <th></th> <th>", names(attr(x, "dimnames"))[2], "</th> <th></th> </tr><br>"),
+                              paste("<tr> <th>", names(attr(x, "dimnames"))[1], "</th> <th> FALSE </th> <th> TRUE </th> </tr> <br>"))
+        
+        x %>% 
+            xtable() %>% 
+            print.xtable(type = "html", add.to.row = addtorow, include.colnames = FALSE)
+        cat(rep("<br>", 2))
+    }
+}
+
+
+# Perform t-test by statistics --------------------------------------------
+t_test <- function(m1, m2, m0 = 0, s1, s2, n1, n2, var.equal = FALSE) {
+    if (var.equal == FALSE) {
+        se <- sqrt(s1^2 / n1 + s2^2 / n2)
+        df <- (s1^2 / n1 + s2^2 / n2)^2 / ((s1^2 / n1)^2 / (n1 - 1) + (s2^2 / n2)^2 / (n2 - 1))
+    } else {
+        se <- sqrt((1 / n1 + 1 / n2) * ((n1 - 1) * s1^2 + (n2 - 1) * s2^2) / (n1 + n2 - 2))
+        df <- n1 + n2 - 2
+    }
+    
+    t <- m1 - m2 - m0 / se
+    result <- data.frame(c("Difference of means", "Std Error", "t", "p-value"),
+                         c(m1 - m2, se, t, 2 * pt(-abs(t), df)))
 }
