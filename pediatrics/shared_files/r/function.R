@@ -2,15 +2,13 @@ run_analysis <- function(hospital, dbms, user, password, server, port = "1521",
                          cohort_id, result_database_schema, cdm_database_schema,
                          voca_database_schema) {
     # Set environment ---------------------------------------------------------
-    pb <- progress_bar$new(total = )
-    pb$tick()
+    pb <- txtProgressBar(min = 0, max = 12, style = 3)
     library(data.table)
     library(tidyverse)
     library(gridExtra)
     library(DatabaseConnector)
     library(SqlRender)
     library(lubridate)
-    library(progress)
     
     source("r/ltool.R")
     
@@ -23,10 +21,10 @@ run_analysis <- function(hospital, dbms, user, password, server, port = "1521",
     desc_stat_path <- file.path(output_path, "desc_stat")
     plot_path <- file.path(output_path, "plot")
     
-    path_assistant(data_path)
-    path_assistant(desc_stat_path)
-    path_assistant(plot_path)
-    pb$tick()
+    path_assistant(data_path, silence = TRUE)
+    path_assistant(desc_stat_path, silence = TRUE)
+    path_assistant(plot_path, silence = TRUE)
+    setTxtProgressBar(pb, 1)
     
     
     # Export data -------------------------------------------------------------
@@ -38,6 +36,17 @@ run_analysis <- function(hospital, dbms, user, password, server, port = "1521",
                                                      port = port)
         
         connection <- connect(connectionDetails)
+        
+        if (hospital == "AMC") {
+            create_table_sql <- readSql(file.path("sql", hospital, "create_table.sql"))
+            create_table_sql <- render(sql = create_table_sql,
+                                       RESULT_DB_SCHEMA = result_database_schema,
+                                       CDM_DB_SCHEMA=cdm_database_schema,
+                                       VOCABULARY_DB_SCHEMA=voca_database_schema,
+                                       warnOnMissingParameters = FALSE)
+            create_table_sql <- str_replace(create_table_sql, "\\d+ AS COHORT_ID", paste(cohort_id, "AS COHORT_ID"))
+            executeSql(connection = connection, sql = create_table_sql)
+        }
         
         sql <- readSql(file.path("sql", hospital, "sql.sql"))
         sql <- render(sql = sql,
@@ -53,7 +62,7 @@ run_analysis <- function(hospital, dbms, user, password, server, port = "1521",
     } else {
         r_data <- fread("data/data.csv")
     }
-    pb$tick()
+    setTxtProgressBar(pb, 2)
     
     
     # Preprocess data ---------------------------------------------------------
@@ -86,14 +95,14 @@ run_analysis <- function(hospital, dbms, user, password, server, port = "1521",
                       "M_AVG")) %>% 
         rename_at(vars(matches("M_AVG$")), funs(str_replace(., "M_AVG$", ""))) %>% 
         as.data.table()
-    pb$tick()
+    setTxtProgressBar(pb, 3)
     
     zbmi <- fread("inst/calculate_zbmi.csv") %>% 
         mutate(sex = ifelse(GENDER == 1, "Male", "Female"),
                sex = as.factor(sex)) %>% 
         select(sex, age_00M, L, M, S) %>% 
         as.data.table()
-    pb$tick()
+    setTxtProgressBar(pb, 4)
     
     for (time_var in time_list) {
         # Calculate BMI
@@ -138,7 +147,7 @@ run_analysis <- function(hospital, dbms, user, password, server, port = "1521",
         datum[, paste("zbmi", time_var, sep = "_")] <- con_vec
         datum[, paste("obesity", time_var, sep = "_")] <- dis_vec
     }
-    pb$tick()
+    setTxtProgressBar(pb, 5)
     
     
     # Baseline characteristics ------------------------------------------------
@@ -224,7 +233,7 @@ run_analysis <- function(hospital, dbms, user, password, server, port = "1521",
                  x = datum[DM == "Type 1", HBA1C_00],
                  y = datum[DM == "Type 2", HBA1C_00])
     sink()
-    pb$tick()
+    setTxtProgressBar(pb, 6)
     
     
     # Linear regression -----------------------------------------------------
@@ -307,7 +316,7 @@ run_analysis <- function(hospital, dbms, user, password, server, port = "1521",
         }
     }
     sink()
-    pb$tick()
+    setTxtProgressBar(pb, 7)
     
     
     # Get abnormal ratio ------------------------------------------------------
@@ -335,7 +344,7 @@ run_analysis <- function(hospital, dbms, user, password, server, port = "1521",
         }
     }
     sink()
-    pb$tick()
+    setTxtProgressBar(pb, 8)
     
     
     # Draw graphs -------------------------------------------------------------
@@ -392,7 +401,7 @@ run_analysis <- function(hospital, dbms, user, password, server, port = "1521",
                 
                 p1_data <- p_data %>% 
                     group_by_at(group_var) %>% 
-                    select(paste(c("zbmi", "HBA1C"), rep(time_list, each = 2), sep = "_")) %>%
+                    select(paste(c("zbmi", "HBA1C"), rep(time_list, each = 2), sep = "_"), !!group_var) %>%
                     summarise_all(list(mean = function(x) {mean(x, na.rm = TRUE)},
                                        sd = function(x) {sd(x, na.rm = TRUE)},
                                        median = function(x) {median(x, na.rm = TRUE)},
@@ -444,19 +453,19 @@ run_analysis <- function(hospital, dbms, user, password, server, port = "1521",
                                                                   colhead = list(bg_params = list(col = "black"))))
                 
                 g <- grid.arrange(grobs = list(plt, df), nrow = 2, heights = c(2, 1))
-                ggsave(file.path(plot_path,
-                                 paste(dm_var, "DM", group_var, "Group", measurement_var, "Plot.tiff", sep = "_")), g)
+                suppressMessages(ggsave(file.path(plot_path,
+                                                  paste(dm_var, "DM", group_var, "Group", measurement_var, "Plot.tiff", sep = "_")), g))
             }
         }
     }
     write_csv(p_value_table, file.path(output_path, "4_P_Value.csv"))
-    pb$tick()
+    setTxtProgressBar(pb, 9)
     
     
     # normality test ----------------------------------------------------------
     norm_test <- data.table()
     norm_test_path <- file.path(plot_path, "norm_test")
-    path_assistant(norm_test_path)
+    path_assistant(norm_test_path, silence = TRUE)
     for (measurement_var in c("zbmi", "HBA1C")) {
         for (time_var in time_list) {
             column_var <- paste(measurement_var, time_var, sep = "_")
@@ -464,7 +473,7 @@ run_analysis <- function(hospital, dbms, user, password, server, port = "1521",
                 ggplot(aes_string(sample = column_var)) +
                 geom_qq() +
                 geom_qq_line()
-            ggsave(file.path(norm_test_path, paste0(column_var, ".png")))
+            suppressMessages(ggsave(file.path(norm_test_path, paste0(column_var, ".png"))))
             
             norm_test <- bind_rows(norm_test, data.table(measurement = column_var, 
                                                          p_value = shapiro.test(datum[[column_var]])$p.value))
@@ -475,12 +484,12 @@ run_analysis <- function(hospital, dbms, user, password, server, port = "1521",
         xtable() %>% 
         print.xtable(type = "html", include.rownames = FALSE)
     sink()
-    pb$tick()
+    setTxtProgressBar(pb, 10)
     
     
     # Draw density plot -------------------------------------------------------
     box_plot_path <- file.path(plot_path, "box_plot")
-    path_assistant(box_plot_path)
+    path_assistant(box_plot_path, silence = TRUE)
     
     for (dm_var in c("All", "Type 1", "Type 2")) {
         if (dm_var != "All") {
@@ -516,10 +525,10 @@ run_analysis <- function(hospital, dbms, user, password, server, port = "1521",
                 geom_hline(yintercept = hline_y, linetype = "dashed")
             
             
-            ggsave(file.path(box_plot_path, paste(dm_var, "DM", measurement_var, "Box_Plot.png", sep = "_")), plt)
+            suppressMessages(ggsave(file.path(box_plot_path, paste(dm_var, "DM", measurement_var, "Box_Plot.png", sep = "_")), plt))
         }
     }
-    pb$tick()
+    setTxtProgressBar(pb, 11)
     
     
     # Make supplement ---------------------------------------------------------
@@ -535,5 +544,5 @@ run_analysis <- function(hospital, dbms, user, password, server, port = "1521",
                type = str_extract(attribute, "[a-zA-Z]+$")) %>% 
         select(-attribute)
     write_csv(supplement, file.path(desc_stat_path, "Total_Measurement_Desc_Stat.csv"))
-    pb$tick()
+    setTxtProgressBar(pb, 12)
 }

@@ -1,7 +1,7 @@
 # Set the analysis environment --------------------------------------------
 setwd("Set the working directory") 
 
-hospital <- "Choose from 'SNUH', 'SNUBH', 'AMC'"
+hospital <- "Choose from 'SNUH', 'AMC'"
 
 dbms <- "The type of DBMS running on the server"
 # "oracle" for Oracle
