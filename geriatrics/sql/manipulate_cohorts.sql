@@ -16,14 +16,13 @@ INNER JOIN (
     
 -- Merge outcome cohorts
 INSERT INTO lcg_cohort
-SELECT 24470007 cohort_definition_id, subject_id, cohort_start_date, cohort_end_date
+SELECT 5 cohort_definition_id, subject_id, cohort_start_date, cohort_end_date
 FROM cohort
 WHERE cohort_definition_id IN (
-    110, -- hospitalization period >= 14
-    122, -- death
-    103 -- emergency room re-admission
+    111, -- Hospitalization period >= 21
+    203 -- Emergency room re-admission
     )
 UNION
-SELECT 24470007 cohort_definition_id, subject_id, cohort_start_date, cohort_end_date
+SELECT 5 cohort_definition_id, subject_id, cohort_start_date, cohort_end_date
 FROM lcg_cohort
-WHERE cohort_definition_id = 24470006;
+WHERE cohort_definition_id = 4; -- Death

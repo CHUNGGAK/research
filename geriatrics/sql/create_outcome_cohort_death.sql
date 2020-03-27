@@ -1,0 +1,62 @@
+/*#######################################################################
+  노인병내과 CDM 원내연구
+  - 2020.03.25 / KS
+  - PLP 분석에서 DEATH는 수술날짜 기준으로 TIME AT RISK를 정의해야 함
+    TARGET COHORT는 입퇴원일자 기준으로 되어 있음
+	그래서 TARGET COHORT에 대한 수술일자와 TIME AT RISK에 해당되는 사망일자 붙여야 함
+
+#######################################################################*/
+
+
+SELECT * FROM RESULT_CDM_2019.COHORT WHERE COHORT_DEFINITION_ID = 1075;
+SELECT COUNT(*), COUNT(DISTINCT SUBJECT_ID) FROM RESULT_CDM_2019.COHORT WHERE COHORT_DEFINITION_ID = 1075; -- 26514	22926
+
+INSERT INTO lcg_cohort
+WITH N_DATA AS (
+     SELECT C1.SUBJECT_ID
+          , V1.VISIT_START_DATE
+          , V1.VISIT_END_DATE
+          , MIN(P1.PROCEDURE_DATE) AS PROCEDURE_DATE
+          , V1.VISIT_END_DATE - MIN(P1.PROCEDURE_DATE) AS GAP_DAYS /* 사망일자에 SHIFT 해야될 DAYS */
+     FROM RESULT_CDM_2019.COHORT C1 -- TARGET COHORT
+        , cdm_2019_view.VISIT_OCCURRENCE V1 -- 입원
+        , cdm_2019_view.PROCEDURE_OCCURRENCE P1 -- 수술
+     WHERE C1.SUBJECT_ID = V1.PERSON_ID
+       AND C1.COHORT_START_DATE = V1.VISIT_START_DATE
+       AND C1.COHORT_END_DATE = V1.VISIT_END_DATE
+       AND V1.VISIT_OCCURRENCE_ID = P1.VISIT_OCCURRENCE_ID
+       AND C1.COHORT_DEFINITION_ID = 1075
+       AND V1.VISIT_CONCEPT_ID = 9201
+       AND P1.PROCEDURE_TYPE_CONCEPT_ID = 38000275
+     GROUP BY C1.SUBJECT_ID, V1.VISIT_START_DATE, V1.VISIT_END_DATE
+     )
+
+--SELECT COUNT(*), COUNT(DISTINCT SUBJECT_ID) FROM N_DATA -- 26514	22926 : 기존 C1과 CNT, PCNT 동일
+--SELECT * FROM N_DATA WHERE PROCEDURE_DATE IS NULL -- 없음 : PROCEDURE_OCCURRENCE를 OUTER에서 INNER로 변경
+                                                    -- 단, 1번 입원시 여러번의 수술이 발생하여 첫번째 수술날짜를 가지고 옴
+
+   , F_DATA AS (
+     SELECT N1.SUBJECT_ID
+          , N1.VISIT_START_DATE
+          , N1.VISIT_END_DATE
+          , N1.PROCEDURE_DATE
+          , N1.GAP_DAYS
+          , C2.COHORT_START_DATE AS DEATH_DATE
+          , C2.COHORT_START_DATE + N1.GAP_DAYS AS FINAL_DEATH_DATE 
+          , ROW_NUMBER() OVER(PARTITION BY N1.SUBJECT_ID ORDER BY N1.VISIT_START_DATE, N1.PROCEDURE_DATE) AS ORDINAL
+     FROM N_DATA N1
+        , RESULT_CDM_2019.COHORT C2 -- 사망
+     WHERE N1.SUBJECT_ID = C2.SUBJECT_ID
+       AND C2.COHORT_START_DATE BETWEEN N1.PROCEDURE_DATE AND N1.PROCEDURE_DATE + 90
+       AND C2.COHORT_DEFINITION_ID = 122
+     )
+
+--SELECT COUNT(*), COUNT(DISTINCT SUBJECT_ID) FROM F_DATA -- 537	525 : 1개 사망이 90일 기간 조건으로 여러건 있을 수 있음
+SELECT 4 cohort_definition_id, subject_id, 
+    visit_end_date + (death_date - procedure_date) cohort_start_date,
+    visit_end_date + (death_date - procedure_date) + 1 cohort_end_date
+FROM F_DATA
+-- WHERE SUBJECT_ID IN (SELECT SUBJECT_ID FROM F_DATA WHERE ORDINAL > 1)
+-- ORDER BY SUBJECT_ID, ORDINAL
+;
+
