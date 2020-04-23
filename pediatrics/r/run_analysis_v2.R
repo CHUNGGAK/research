@@ -379,23 +379,23 @@ for (dm_var in c("All", "Type 1", "Type 2")) {
             f <- paste(dep_var,
                        paste(p_indep$name, collapse = "+"),
                        sep = "~")
-            lm_result <- lm(data = p_data, as.formula(f))
+            multi_lm <- lm(data = p_data, as.formula(f))
             
             cat(paste(dm_var, "DM; Multivariate Linear Regression: ", f))
-            print.xtable(xtable(lm_result), type = "html")
-            cat("<br>Number of observation used: ", nobs(lm_result), rep("<br>", 2))
+            print.xtable(xtable(multi_lm), type = "html")
+            cat("<br>Number of observation used: ", nobs(multi_lm), rep("<br>", 2))
             
             for (uni_var in p_indep$name) {
                 if (p_indep[name == uni_var, type] == "continuous") {
                     f <- paste(dep_var, uni_var, sep = "~")
-                    lm_result <- lm(data = p_data, as.formula(f))
+                    uni_lm <- lm(data = p_data, as.formula(f))
                     
                     cat(paste("Unvariate Linear Regression: ", f))
-                    print.xtable(xtable(lm_result), type = "html")
+                    print.xtable(xtable(uni_lm), type = "html")
                     cat(rep("<br>", 2))
                     
                     cat(paste(uni_var, "Descriptive Statistics:"))
-                    p_data %>% 
+                    multi_lm$model %>% 
                         select(!!uni_var) %>% 
                         summarise_all(list(n = function(x) {sum(!is.na(x))},
                                            min = function(x) {min(x, na.rm = TRUE)},
@@ -410,15 +410,8 @@ for (dm_var in c("All", "Type 1", "Type 2")) {
                     cat(rep("<br>", 2))
                     
                 } else {
-                    f <- paste(dep_var, uni_var, sep = "~")
-                    lm_result <- glm(data = p_data, as.formula(f))
-                    
-                    cat(paste("Unvariate Logistic Linear Regression: ", f))
-                    print.xtable(xtable(lm_result), type = "html")
-                    cat(rep("<br>", 2))
-                    
                     cat(paste(uni_var, "Descriptive Statistics:"))
-                    p_data %>% 
+                    multi_lm$model %>% 
                         group_by_at(uni_var) %>% 
                         summarise(n = n()) %>% 
                         xtable() %>% 
@@ -429,4 +422,88 @@ for (dm_var in c("All", "Type 1", "Type 2")) {
         }
     }
 }
+sink()
+
+# Baseline characteristics ------------------------------------------------
+sink(file.path(output_path, "1_Baseline_Characteristics.html"))
+cat("The number of patients by DM type")
+datum %>% 
+    group_by(DM) %>% 
+    summarise(n = n()) %>% 
+    xtable() %>% 
+    print.xtable(type = "html", include.rownames = FALSE)
+cat(rep("<br>", 2))
+
+cat("The number of patients by DM type; sex")
+datum %>% 
+    group_by(DM, sex) %>% 
+    summarise(n = n()) %>% 
+    xtable() %>% 
+    print.xtable(type = "html", include.rownames = FALSE)
+cat(rep("<br>", 2))
+
+cat("The mean of patients by DM type")
+datum %>% 
+    group_by(DM) %>% 
+    summarise(mean = mean(age_00 / 12, na.rm = TRUE),
+              sd = sd(age_00 / 12, na.rm = TRUE)) %>% 
+    xtable() %>% 
+    print.xtable(type = "html", include.rownames = FALSE)
+cat(rep("<br>", 2))
+
+print_t_test(title = "Age",
+             x = datum[DM == "Type 1", age_00 / 12],
+             y = datum[DM == "Type 2", age_00 / 12])
+
+cat("The number of patients by DM type; age group")
+datum %>% 
+    group_by(DM, age_group) %>% 
+    summarise(n = n()) %>% 
+    xtable() %>% 
+    print.xtable(type = "html", include.rownames = FALSE)
+cat(rep("<br>", 2))
+
+cat("The descriptive statistics of BMI z-score by DM type")
+datum %>% 
+    group_by(DM) %>% 
+    summarise(min = min(zbmi_00, na.rm = TRUE),
+              q1 = quantile(zbmi_00, 0.25, na.rm = TRUE),
+              mean = mean(zbmi_00, na.rm = TRUE),
+              sd = sd(zbmi_00, na.rm = TRUE),
+              median = median(zbmi_00, na.rm = TRUE),
+              q3 = quantile(zbmi_00, 0.75, na.rm = TRUE),
+              max = max(zbmi_00, na.rm = TRUE)) %>% 
+    xtable() %>% 
+    print.xtable(type = "html", include.rownames = FALSE)
+cat(rep("<br>", 2))
+
+print_t_test(title = "BMI z-score",
+             x = datum[DM == "Type 1", zbmi_00],
+             y = datum[DM == "Type 2", zbmi_00])
+
+cat("The number of patients by DM type; DKA")
+datum %>% 
+    group_by(DM, DKA) %>% 
+    summarise(n = n()) %>% 
+    xtable() %>% 
+    print.xtable(type = "html", include.rownames = FALSE)
+cat(rep("<br>", 2))
+
+cat("The descriptive statistics of HbA1c by DM type")
+datum %>% 
+    group_by(DM) %>% 
+    summarise(min = min(HBA1C_00, na.rm = TRUE),
+              q1 = quantile(HBA1C_00, 0.25, na.rm = TRUE),
+              mean = mean(HBA1C_00, na.rm = TRUE),
+              sd = sd(HBA1C_00, na.rm = TRUE),
+              median = median(HBA1C_00, na.rm = TRUE),
+              q3 = quantile(HBA1C_00, 0.75, na.rm = TRUE),
+              max = max(HBA1C_00, na.rm = TRUE)) %>% 
+    xtable() %>% 
+    print.xtable(type = "html", include.rownames = FALSE)
+cat(rep("<br>", 2))
+
+print_t_test(title = "HbA1c",
+             x = datum[DM == "Type 1", HBA1C_00],
+             y = datum[DM == "Type 2", HBA1C_00])
 sink()
