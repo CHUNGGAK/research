@@ -379,23 +379,27 @@ for (dm_var in c("All", "Type 1", "Type 2")) {
             f <- paste(dep_var,
                        paste(p_indep$name, collapse = "+"),
                        sep = "~")
-            multi_lm <- lm(data = p_data, as.formula(f))
             
             cat(paste(dm_var, "DM; Multivariate Linear Regression: ", f))
+            
+            tryCatch({multi_lm <- lm(data = p_data, as.formula(f))
             print.xtable(xtable(multi_lm), type = "html")
-            cat("<br>Number of observation used: ", nobs(multi_lm), rep("<br>", 2))
+            cat("<br>Number of observation used: ", nobs(multi_lm), rep("<br>", 2))},
+            error = function(e) cat("Error occured<br><br>"))
             
             for (uni_var in p_indep$name) {
                 if (p_indep[name == uni_var, type] == "continuous") {
                     f <- paste(dep_var, uni_var, sep = "~")
-                    uni_lm <- lm(data = p_data, as.formula(f))
                     
                     cat(paste("Unvariate Linear Regression: ", f))
-                    print.xtable(xtable(uni_lm), type = "html")
+                    
+                    tryCatch({uni_lm <- lm(data = p_data, as.formula(f))
+                    print.xtable(xtable(uni_lm), type = "html")},
+                    error = function(e) cat("Error occured"))
                     cat(rep("<br>", 2))
                     
                     cat(paste(uni_var, "Descriptive Statistics:"))
-                    multi_lm$model %>% 
+                    tryCatch({multi_lm$model %>% 
                         select(!!uni_var) %>% 
                         summarise_all(list(n = function(x) {sum(!is.na(x))},
                                            min = function(x) {min(x, na.rm = TRUE)},
@@ -406,16 +410,18 @@ for (dm_var in c("All", "Type 1", "Type 2")) {
                                            q3 = function(x) {quantile(x, 0.75, na.rm = TRUE)},
                                            max = function(x) {max(x, na.rm = TRUE)})) %>% 
                         xtable() %>% 
-                        print.xtable(type = "html", include.rownames = FALSE)
+                        print.xtable(type = "html", include.rownames = FALSE)},
+                        error = function(e) cat("Error occured"))
                     cat(rep("<br>", 2))
                     
                 } else {
                     cat(paste(uni_var, "Descriptive Statistics:"))
-                    multi_lm$model %>% 
+                    tryCatch({multi_lm$model %>% 
                         group_by_at(uni_var) %>% 
                         summarise(n = n()) %>% 
                         xtable() %>% 
-                        print.xtable(type = "html", include.rownames = FALSE)
+                        print.xtable(type = "html", include.rownames = FALSE)},
+                        error = function(e) cat("Error occured"))
                     cat(rep("<br>", 2))
                 }
             }
