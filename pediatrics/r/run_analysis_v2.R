@@ -37,7 +37,7 @@ datum <- r_data %>%
                            right = FALSE),
            COHORT_START_DATE = ymd(COHORT_START_DATE),
            DKA = ifelse(DKA_YN_NEW == 0, FALSE, TRUE),
-           DM = ifelse(DM == 1, "Type 1", "Type 2"),
+           DM = ifelse(DM == "Type 1", "Type 1", "Type 2"),
            DM = as.factor(DM)) %>% 
     filter(DM != 0 & # 조건 1: 1, 2형 당뇨 환자만 포함한다
                ((!is.na(HEIGHT_00M_AVG) & !is.na(WEIGHT_00M_AVG)) | !is.na(HBA1C_00M_AVG)) &
@@ -75,7 +75,7 @@ for (time_var in time_list) {
     datum[datum[, get(paste("HBA1C", time_var, sep = "_"))] > 30, paste("HBA1C", time_var, sep = "_")] <- NA
     datum[, paste("hba1c_abnormal", time_var, sep = "_")] <-
         cut(datum[, get(paste("HBA1C", time_var, sep = "_"))],
-            breaks = c(-Inf, 7.5, Inf),
+            breaks = c(-Inf, 7, Inf),
             labels = c("FALSE", "TRUE"),
             right = FALSE)
     
@@ -179,92 +179,56 @@ for (dm_var in c("All", "Type 1", "Type 2")) {
                 y_lab <- "HbA1c(%)"
             }
             
-            p_value_vec <- c()
-            
             for (time_var in time_list) {
                 if (group_var == "DM") {
-                    p_value_vec <- c(p_value_vec, t.test(datum[DM == "Type 1", get(paste(measurement_var, time_var, sep = "_"))],
-                                                         datum[DM == "Type 2", get(paste(measurement_var, time_var, sep = "_"))])$p.value)
+                    p_value_table <- bind_rows(p_value_table,
+                                               data.frame(dm = dm_var,
+                                                          group = group_var,
+                                                          measurement = measurement_var,
+                                                          time = time_var,
+                                                          p_value = t.test(datum[DM == "Type 1", get(paste(measurement_var, time_var, sep = "_"))],
+                                                                           datum[DM == "Type 2", get(paste(measurement_var, time_var, sep = "_"))])$p.value))
+                } else if (group_var == "sex") {
+                    p_value_table <- bind_rows(p_value_table,
+                                               data.frame(dm = dm_var,
+                                                          group = group_var,
+                                                          measurement = measurement_var,
+                                                          time = time_var,
+                                                          p_value = t.test(datum[sex == "Male", get(paste(measurement_var, time_var, sep = "_"))],
+                                                                           datum[sex == "Female", get(paste(measurement_var, time_var, sep = "_"))])$p.value))
+                } else if (dm_var == "Type 2" & group_var == "age_group") {
+                    p_value_table <- bind_rows(p_value_table,
+                                               data.frame(dm = dm_var,
+                                                          group = group_var,
+                                                          measurement = measurement_var,
+                                                          time = time_var,
+                                                          p_value = t.test(datum[age_group == "5-9Y", get(paste(measurement_var, time_var, sep = "_"))],
+                                                                           datum[age_group == "10-14Y", get(paste(measurement_var, time_var, sep = "_"))])$p.value))
                 } else {
-                    p_value_vec <- c(p_value_vec,
-                                     summary(aov(data = datum, as.formula(paste(paste(measurement_var, time_var, sep = "_"), group_var, sep = "~"))))[[1]][["Pr(>F)"]][[1]])
+                    p_value_table <- bind_rows(p_value_table,
+                                               data.frame(dm = dm_var,
+                                                          group = group_var,
+                                                          measurement = measurement_var,
+                                                          time = time_var,
+                                                          p_value = summary(aov(data = datum,
+                                                                                as.formula(paste(paste(measurement_var, time_var, sep = "_"), group_var, sep = "~"))))[[1]][["Pr(>F)"]][[1]]))
                 }
             }
-            
-            p_value_table <- rbind(p_value_table,
-                                   data.table(dm = dm_var,
-                                              group = group_var,
-                                              measurement = measurement_var,
-                                              time = time_list,
-                                              p_value = p_value_vec))
-            
-            p1_data <- p_data %>% 
-                group_by_at(group_var) %>% 
-                select(paste(c("zbmi", "HBA1C"), rep(time_list, each = 2), sep = "_"), !!group_var) %>%
-                summarise_all(list(mean = function(x) {mean(x, na.rm = TRUE)},
-                                   sd = function(x) {sd(x, na.rm = TRUE)},
-                                   median = function(x) {median(x, na.rm = TRUE)},
-                                   n = function(x) {sum(!is.na(x))})) %>% 
-                gather("attribute", "value", 2:ncol(.)) %>% 
-                mutate(time = str_extract(attribute, "\\d{2}"),
-                       measurement = str_extract(attribute, "^[a-zA-Z0-9]+"),
-                       type = str_extract(attribute, "[a-zA-Z]+$")) %>% 
-                select(-attribute)
-            write_csv(p1_data, file.path(desc_stat_path, paste(dm_var, "DM", group_var, "Group_Measurement_Desc_Stat.csv", sep = "_")))
-            
-            plt <- p1_data %>% 
-                filter(measurement == measurement_var & type == "mean") %>% 
-                ggplot(aes_string(x = "time", y = "value", group = group_var)) +
-                geom_point(aes_string(shape = group_var), size = 3) +
-                geom_line(size = 0.7) +
-                geom_hline(yintercept = c(0, hline_y), linetype = "dashed") +
-                annotate("text", x = 7.5, y = annotate_y, label = annotate_label) +
-                coord_cartesian(ylim = ylim) +
-                scale_x_discrete(labels = c("03" = expression(bold(underline("03"))),
-                                            "36" = expression(bold(underline("36"))),
-                                            "60" = expression(bold(underline("60"))),
-                                            parse = TRUE)) +
-                scale_y_continuous(breaks = ybreaks) +
-                labs(x = "Time(month)", y = y_lab) +
-                theme_classic() +
-                theme(legend.position = "top",
-                      legend.title = element_blank(),
-                      axis.title = element_text(size = 15),
-                      axis.text = element_text(size = 15))
-            
-            if (p_value_table[dm == dm_var &
-                              group == group_var &
-                              measurement == measurement_var &
-                              time == "03", p_value] < 0.05 / 3) {
-                plt <- plt +
-                    annotate("text", x = "03", y = ylim[2] * 0.8, label = "*")
-            }
-            if (p_value_table[dm == dm_var &
-                              group == group_var &
-                              measurement == measurement_var &
-                              time == "36", p_value] < 0.05 / 3) {
-                plt <- plt + 
-                    annotate("text", x = "36", y = ylim[2] * 0.8, label = "*")
-            }
-            if (p_value_table[dm == dm_var &
-                              group == group_var &
-                              measurement == measurement_var &
-                              time == "60", p_value] < 0.05 / 3) {
-                plt <- plt +
-                    annotate("text", x = "60", y = ylim[2] * 0.8, label = "*")
-            }
-            
-            df <- p1_data %>% 
-                filter(measurement == measurement_var & type == "n") %>% 
-                select(!!group_var, time, value) %>% 
-                spread(key = time, value = value) %>% 
-                tableGrob(rows = NULL, theme = ttheme_default(core = list(bg_params = list(fill = "white", col = "black")),
-                                                              colhead = list(bg_params = list(col = "black"))))
-            
-            g <- grid.arrange(grobs = list(plt, df), nrow = 2, heights = c(2, 1))
-            suppressMessages(ggsave(file.path(plot_path,
-                                              paste(dm_var, "DM", group_var, "Group", measurement_var, "Plot.tiff", sep = "_")), g))
         }
+        
+        p1_data <- p_data %>% 
+            group_by_at(group_var) %>% 
+            select(paste(c("zbmi", "HBA1C"), rep(time_list, each = 2), sep = "_"), !!group_var) %>%
+            summarise_all(list(mean = function(x) {mean(x, na.rm = TRUE)},
+                               sd = function(x) {sd(x, na.rm = TRUE)},
+                               median = function(x) {median(x, na.rm = TRUE)},
+                               n = function(x) {sum(!is.na(x))})) %>% 
+            gather("attribute", "value", 2:ncol(.)) %>% 
+            mutate(time = str_extract(attribute, "\\d{2}"),
+                   measurement = str_extract(attribute, "^[a-zA-Z0-9]+"),
+                   type = str_extract(attribute, "[a-zA-Z]+$")) %>% 
+            select(-attribute)
+        write_csv(p1_data, file.path(desc_stat_path, paste(dm_var, group_var, "Desc_Stat.csv", sep = "_")))
     }
 }
 write_csv(p_value_table, file.path(output_path, "4_P_Value.csv"))
@@ -331,7 +295,6 @@ for (dm_var in c("All", "Type 1", "Type 2")) {
                       aes(x = time, y = text_y, label = n)) +
             geom_hline(yintercept = hline_y, linetype = "dashed")
         
-        
         suppressMessages(ggsave(file.path(box_plot_path, paste(dm_var, "DM", measurement_var, "Box_Plot.png", sep = "_")), plt))
     }
 }
@@ -350,6 +313,7 @@ supplement <- datum %>%
            type = str_extract(attribute, "[a-zA-Z]+$")) %>% 
     select(-attribute)
 write_csv(supplement, file.path(desc_stat_path, "Total_Measurement_Desc_Stat.csv"))
+
 
 # Linear regression -----------------------------------------------------
 lm_var_list <- list(indep = data.table(name = c("HBA1C_03", "DKA", "obesity_03", "sex", "age_03"),
@@ -379,13 +343,12 @@ for (dm_var in c("All", "Type 1", "Type 2")) {
             f <- paste(dep_var,
                        paste(p_indep$name, collapse = "+"),
                        sep = "~")
-            
             cat(paste(dm_var, "DM; Multivariate Linear Regression: ", f))
             
             tryCatch({multi_lm <- lm(data = p_data, as.formula(f))
             print.xtable(xtable(multi_lm), type = "html")
             cat("<br>Number of observation used: ", nobs(multi_lm), rep("<br>", 2))},
-            error = function(e) cat("Error occured<br><br>"))
+            error = function(e) {cat("Error occurred<br><br>")})
             
             for (uni_var in p_indep$name) {
                 if (p_indep[name == uni_var, type] == "continuous") {
@@ -395,7 +358,7 @@ for (dm_var in c("All", "Type 1", "Type 2")) {
                     
                     tryCatch({uni_lm <- lm(data = p_data, as.formula(f))
                     print.xtable(xtable(uni_lm), type = "html")},
-                    error = function(e) cat("Error occured"))
+                    error = function(e) {cat("Error occurred")})
                     cat(rep("<br>", 2))
                     
                     cat(paste(uni_var, "Descriptive Statistics:"))
@@ -411,7 +374,7 @@ for (dm_var in c("All", "Type 1", "Type 2")) {
                                            max = function(x) {max(x, na.rm = TRUE)})) %>% 
                         xtable() %>% 
                         print.xtable(type = "html", include.rownames = FALSE)},
-                        error = function(e) cat("Error occured"))
+                        error = function(e) {cat("Error occurred")})
                     cat(rep("<br>", 2))
                     
                 } else {
@@ -421,7 +384,7 @@ for (dm_var in c("All", "Type 1", "Type 2")) {
                         summarise(n = n()) %>% 
                         xtable() %>% 
                         print.xtable(type = "html", include.rownames = FALSE)},
-                        error = function(e) cat("Error occured"))
+                        error = function(e) {cat("Error occurred")})
                     cat(rep("<br>", 2))
                 }
             }
@@ -429,6 +392,7 @@ for (dm_var in c("All", "Type 1", "Type 2")) {
     }
 }
 sink()
+
 
 # Baseline characteristics ------------------------------------------------
 sink(file.path(output_path, "1_Baseline_Characteristics.html"))

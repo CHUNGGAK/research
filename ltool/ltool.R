@@ -4,10 +4,10 @@ library(data.table)
 
 
 # Path assistant ----------------------------------------------------------
-path_assistant <- function(path) {
+path_assistant <- function(path, silence = FALSE) {
     if (!dir.exists(path)) {
         cat(paste0("'", path, "'", " does not exist. Therefore, new directory is created."))
-        dir.create(path, recursive = TRUE)
+        dir.create(path, recursive = TRUE, showWarnings = silence)
     } else {
         cat(paste0("'", path, "'", " exists, Therefore, use an existing path."))
     }
@@ -120,6 +120,11 @@ t_test <- function(m1, m2, m0 = 0, s1, s2, n1, n2, var.equal = FALSE) {
     }
     
     t <- m1 - m2 - m0 / se
-    result <- data.frame(c("Difference of means", "Std Error", "t", "p-value"),
-                         c(m1 - m2, se, t, 2 * pt(-abs(t), df)))
+    
+    result <- data.frame(Difference_of_means = m1 - m2,
+                         Std_Error = se,
+                         t = t,
+                         p_value = pt(-abs(t), df))
+    
+    return(result)
 }
