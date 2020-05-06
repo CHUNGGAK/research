@@ -15,10 +15,8 @@ source("r/ltool.R")
 data_path <- "data"
 output_path <- "output"
 desc_stat_path <- file.path(output_path, "desc_stat")
-plot_path <- file.path(output_path, "plot")
 
 path_assistant(desc_stat_path, silence = TRUE)
-path_assistant(plot_path, silence = TRUE)
 
 
 # Preprocess data ---------------------------------------------------------
@@ -37,7 +35,7 @@ datum <- r_data %>%
                            right = FALSE),
            COHORT_START_DATE = ymd(COHORT_START_DATE),
            DKA = ifelse(DKA_YN_NEW == 0, FALSE, TRUE),
-           DM = ifelse(DM == "Type 1", "Type 1", "Type 2"),
+           DM = ifelse(DM == 1, "Type 1", "Type 2"),
            DM = as.factor(DM)) %>% 
     filter(DM != 0 & # 조건 1: 1, 2형 당뇨 환자만 포함한다
                ((!is.na(HEIGHT_00M_AVG) & !is.na(WEIGHT_00M_AVG)) | !is.na(HBA1C_00M_AVG)) &
@@ -236,7 +234,7 @@ write_csv(p_value_table, file.path(output_path, "4_P_Value.csv"))
 
 # normality test ----------------------------------------------------------
 norm_test <- data.table()
-norm_test_path <- file.path(plot_path, "norm_test")
+norm_test_path <- file.path(output_path, "norm_test")
 path_assistant(norm_test_path, silence = TRUE)
 for (measurement_var in c("zbmi", "HBA1C")) {
     for (time_var in time_list) {
@@ -259,7 +257,7 @@ sink()
 
 
 # Draw density plot -------------------------------------------------------
-box_plot_path <- file.path(plot_path, "box_plot")
+box_plot_path <- file.path(output_path, "box_plot")
 path_assistant(box_plot_path, silence = TRUE)
 
 for (dm_var in c("All", "Type 1", "Type 2")) {
@@ -477,3 +475,20 @@ print_t_test(title = "HbA1c",
              x = datum[DM == "Type 1", HBA1C_00],
              y = datum[DM == "Type 2", HBA1C_00])
 sink()
+
+# (2020-05-06) get values for calculating weighted SD
+dt_weightedSd <- data.table(variable = c("age", "zbmi", "hba1c"),
+                            T1DM_deviation = c(sum((datum[DM == "Type 1", age_00] - 9.87)^2, na.rm = TRUE),
+                                               sum((datum[DM == "Type 1", zbmi_00] - (-0.46))^2, na.rm = TRUE),
+                                               sum((datum[DM == "Type 1", HBA1C_00] - 10.07)^2, na.rm = TRUE)),
+                            T1DM_n = c(sum(!is.na(datum[DM == "Type 1", age_00]), na.rm = TRUE),
+                                       sum(!is.na(datum[DM == "Type 1", zbmi_00] ), na.rm = TRUE),
+                                       sum(!is.na(datum[DM == "Type 1", HBA1C_00]), na.rm = TRUE)),
+                            T2DM_deviation = c(sum((datum[DM == "Type 2", age_00] - 12.22)^2, na.rm = TRUE),
+                                               sum((datum[DM == "Type 2", zbmi_00] - 1.52)^2, na.rm = TRUE),
+                                               sum((datum[DM == "Type 2", HBA1C_00] - 9.48)^2, na.rm = TRUE)),
+                            T2DM_n = c(sum(!is.na(datum[DM == "Type 2", age_00]), na.rm = TRUE),
+                                       sum(!is.na(datum[DM == "Type 2", zbmi_00]), na.rm = TRUE),
+                                       sum(!is.na(datum[DM == "Type 2", HBA1C_00]), na.rm = TRUE)))
+
+write_csv(dt_weightedSd, file.path(output_path, "5_DataForWeightedSd.csv"))
