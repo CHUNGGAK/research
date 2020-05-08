@@ -116,7 +116,7 @@ write.csv(datum, file.path(data_path, "p_data.csv"))
 
 
 # Get abnormal ratio ------------------------------------------------------
-sink(file.path(output_path, "3_Abnormal_Ratio_SNUH.html"))
+sink(file.path(output_path, "3_Abnormal_Ratio_v2.html"))
 for (x in c("obesity", "hba1c_abnormal")) {
     for (time_var in time_list) {
         cat(paste("The ratio of", x ,"by DM type;", time_var, "time"))
@@ -478,13 +478,13 @@ sink()
 
 # (2020-05-06) get values for calculating weighted SD
 dt_weightedSd <- data.table(variable = c("age", "zbmi", "hba1c"),
-                            T1DM_deviation = c(sum((datum[DM == "Type 1", age_00] - 9.87)^2, na.rm = TRUE),
+                            T1DM_deviation = c(sum((datum[DM == "Type 1", age_00] / 12 - 9.87)^2, na.rm = TRUE),
                                                sum((datum[DM == "Type 1", zbmi_00] - (-0.46))^2, na.rm = TRUE),
                                                sum((datum[DM == "Type 1", HBA1C_00] - 10.07)^2, na.rm = TRUE)),
                             T1DM_n = c(sum(!is.na(datum[DM == "Type 1", age_00]), na.rm = TRUE),
                                        sum(!is.na(datum[DM == "Type 1", zbmi_00] ), na.rm = TRUE),
                                        sum(!is.na(datum[DM == "Type 1", HBA1C_00]), na.rm = TRUE)),
-                            T2DM_deviation = c(sum((datum[DM == "Type 2", age_00] - 12.22)^2, na.rm = TRUE),
+                            T2DM_deviation = c(sum((datum[DM == "Type 2", age_00] / 12 - 12.22)^2, na.rm = TRUE),
                                                sum((datum[DM == "Type 2", zbmi_00] - 1.52)^2, na.rm = TRUE),
                                                sum((datum[DM == "Type 2", HBA1C_00] - 9.48)^2, na.rm = TRUE)),
                             T2DM_n = c(sum(!is.na(datum[DM == "Type 2", age_00]), na.rm = TRUE),
