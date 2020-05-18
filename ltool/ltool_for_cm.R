@@ -142,172 +142,120 @@ draw_attrition_diagram <- function (object, targetLabel = "Target", comparatorLa
 
 
 # print multiple CohortMethod result ------------------------------------------------
-view_cm <- function(result, output_folder,
-                    plot_time_to_event_period_length = 7,
-                    ps_adjustment) {
-    # Make result file directory
-    file_path <- file.path(output_folder, "view_cm")
-    path_assistant(file_path)
+tidy_cm <- function(result, outputFolder) {
+    tidy_cm_folder <- file.path(outputFolder, "tidy_cm")
+    dir.create(tidy_cm_folder)
     
-    result <- as.data.table(result)
-    write_csv(result, file.path(file_path, "result.csv"))
+    write_csv(result, file.path(tidy_cm_folder, "result.csv"))
     
-    # Create result table
-    analysisSum <- summarizeAnalyses(result, output_folder)
+    vSharedPsFile <- result %>% 
+        filter(sharedPsFile != "") %>% 
+        pull(sharedPsFile)
     
-    sink(file.path(file_path, "cm_result.html"))
-    analysisSum %>%
-        mutate(analysisId = as.character(analysisId),
-               targetId = as.character(targetId),
-               comparatorId = as.character(comparatorId),
-               outcomeId = as.character(outcomeId),
-               targetDays = as.integer(targetDays),
-               comparatorDays = as.integer(comparatorDays),
-               eventsTarget = as.integer(eventsTarget),
-               eventsComparator = as.integer(eventsComparator)) %>% 
-        xtable() %>%
-        print.xtable(type = "html", include.rownames = FALSE)
-    sink()
+    ps_folder <- file.path(tidy_cm_folder, "ps")
+    dir.create(ps_folder)
     
-    cm_data <- loadCohortMethodData(file.path(output_folder, unique(result$cohortMethodDataFolder)))
-    
-    for (target_var in result$targetId) {
-        for (comparator_var in result$comparatorId) {
-            ps_file <- unique(result[targetId == target_var &
-                                         comparatorId == comparator_var &
-                                         psFile != "",
-                                     psFile])
-            ps <- readRDS(file.path(output_folder, ps_file))
-            
-            sink(file.path(file_path, "propensity_model.html"))
-            getPsModel(ps, cm_data) %>% 
-                arrange(coefficient) %>% 
-                xtable() %>% 
-                print.xtable(type = "html", include.rownames = FALSE)
-            sink()
-            
-            plotPs(ps, showCountsLabel = TRUE, showEquiposeLabel = TRUE,
-                   fileName = file.path(file_path,
-                                        paste("T",
-                                              target_var,
-                                              "C",
-                                              comparator_var,
-                                              "ps_plot.png",
-                                              sep = "_")))
-            
-            matched_pop_file <- unique(result[targetId == target_var &
-                                                  comparatorId == comparator_var &
-                                                  strataFile != "",
-                                              strataFile])
-            
-            matched_pop <- readRDS(file.path(output_folder, matched_pop_file))
-            plotPs(matched_pop, ps,
-                   showCountsLabel = TRUE, showEquiposeLabel = TRUE,
-                   fileName = file.path(file_path,
-                                        paste("T",
-                                              target_var,
-                                              "C",
-                                              comparator_var,
-                                              "matched_pop_ps_plot.png",
-                                              sep = "_")))
-            
-            draw_attrition_diagram(matched_pop, fileName = file.path(file_path, paste("T",
-                                                                                      target_var,
-                                                                                      "C",
-                                                                                      comparator_var,
-                                                                                      "person_attrition_diagram(person).png",
-                                                                                      sep = "_")))
-            draw_attrition_diagram(matched_pop, fileName = file.path(file_path, paste("T",
-                                                                                      target_var,
-                                                                                      "C",
-                                                                                      comparator_var,
-                                                                                      "attrition_diagram(incident).png",
-                                                                                      sep = "_")),
-                                   count = "incident")
-            
-            # Evaluating covariate balance
-            balance <- computeCovariateBalance(matched_pop, cm_data)
-            
-            if (ps_adjustment == "match") {
-                plotCovariateBalanceScatterPlot(balance, showCovariateCountLabel = TRUE, showMaxLabel = TRUE,
-                                                fileName = file.path(file_path,
-                                                                     paste("T",
-                                                                           target_var,
-                                                                           "C",
-                                                                           comparator_var,
-                                                                           "balance_scatter_plot.png",
-                                                                           sep = "_")))
-                plotCovariateBalanceOfTopVariables(balance,
-                                                   fileName = file.path(file_path,
-                                                                        paste("T",
-                                                                              target_var,
-                                                                              "C",
-                                                                              comparator_var,
-                                                                              "balance_top_variables_plot.png",
-                                                                              sep = "_")))
-            }
-            
-            sink(file.path(file_path, paste("T",
-                                            target_var,
-                                            "C",
-                                            comparator_var,
-                                            "population_characteristics.html",
-                                            sep = "_")))
-            createCmTable1(balance) %>% 
-                xtable() %>% 
-                print.xtable(type = "html", include.rownames = FALSE)
-            sink()
-            
-            # Follow-up and power
-            plotFollowUpDistribution(population = matched_pop,
-                                     fileName = file.path(file_path,
-                                                          paste("T",
-                                                                target_var,
-                                                                "C",
-                                                                comparator_var,
-                                                                "follow_up_distribution_plot.png",
-                                                                sep = "_")))
-            
-            # Kaplan-Meier plot
-            plotKaplanMeier(matched_pop, includeZero = FALSE,
-                            fileName = file.path(file_path,
-                                                 paste("T",
-                                                       target_var,
-                                                       "C",
-                                                       comparator_var,
-                                                       "kaplan_meier_plot.png",
-                                                       sep = "_")))
-        }
+    for (i in vSharedPsFile) {
+        ps <- readRDS(file.path(outputFolder, i))
+        
+        plotPs(data = ps,
+               showCountsLabel = TRUE,
+               showEquiposeLabel = TRUE,
+               fileName = file.path(ps_folder, paste0(str_extract(i, "Ps_l\\d+_s\\d+_p\\d+_t\\d+_c\\d+"), ".png")))
     }
     
+    dPsModel <- result %>%
+        filter(sharedPsFile != "" & cohortMethodDataFolder != "" ) %>% 
+        distinct(sharedPsFile, cohortMethodDataFolder)
     
-    # Empirical Calibration
-    # plotCalibrationEffect()
+    for (i in 1:nrow(dPsModel)) {
+        ps <- readRDS(file.path(outputFolder, dPsModel[[i, "sharedPsFile"]]))
+        cm <- loadCohortMethodData(file.path(outputFolder, dPsModel[[i, "cohortMethodDataFolder"]]))
+        
+        psModel <- getPsModel(ps, cm)
+        write_csv(psModel, file.path(ps_folder, paste0(str_extract(dPsModel[[i, "sharedPsFile"]], "Ps_l\\d+_s\\d+_p\\d+_t\\d+_c\\d+"), ".csv")))
+    }
     
-    for (outcome_var in unique(result$outcomeId)) {
-        # Inspecting the outcome model
-        sink(file.path(file_path, paste(outcome_var, "outcome_model.html", sep = "_")))
-        for (outcome_model_file_var in unique(result[outcomeId == outcome_var & outcomeModelFile != "", outcomeModelFile])) {
-            outcome_model <- readRDS(file.path(output_folder, outcome_model_file_var))
-            if (outcome_model$outcomeModelStatus == "OK") {
-                full_outcome_model <- getOutcomeModel(outcome_model, cm_data)
-                cat(str_sub(outcome_model_file_var, 1, 10))
-                full_outcome_model %>% 
-                    xtable() %>% 
-                    print.xtable(type = "html", include.rownames = FALSE)
-                cat(rep("<br>", 2))
-            }
-        }
-        sink()
+    dTrimmedPop <- result %>%
+        filter(sharedPsFile != "" & strataFile != "" ) %>% 
+        distinct(sharedPsFile, strataFile)
+    
+    for (i in 1:nrow(dTrimmedPop)) {
+        ps <- readRDS(file.path(outputFolder, dTrimmedPop[[i, "sharedPsFile"]]))
+        strata <- readRDS(file.path(outputFolder, dTrimmedPop[[i, "strataFile"]]))
         
+        plotPs(strata,
+               ps,
+               showCountsLabel = TRUE,
+               fileName = file.path(ps_folder, paste0(str_extract(dTrimmedPop[[i, "strataFile"]],
+                                                                  "StratPop_l\\d+_s\\d+_p\\d+_t\\d+_c\\d+_s\\d+_o\\d+"),
+                                                      ".png")))
+    }
+    
+    vTrimmedPop <- result %>% 
+        filter(strataFile != "") %>% 
+        pull(strataFile)
+    
+    attrition_diagram_folder <- file.path(tidy_cm_folder, "attrition_diagram")
+    dir.create(attrition_diagram_folder)
+    
+    follow_up_distribution_folder <- file.path(tidy_cm_folder, "follow_up_distribution_")
+    dir.create(follow_up_distribution_folder)
+    
+    for (i in vTrimmedPop) {
+        strata <- readRDS(file.path(outputFolder, i))
         
-        # Time-to-event plot
-        plotTimeToEvent(cohortMethodData = cm_data, outcomeId = outcome_var, firstExposureOnly = FALSE,
-                        washoutPeriod = 0, removeDuplicateSubjects = FALSE, minDaysAtRisk = 0,
-                        riskWindowStart = 0, startAnchor = "cohort start", riskWindowEnd = 365,
-                        endAnchor = "cohort end",
-                        periodLength = plot_time_to_event_period_length,
-                        fileName = file.path(file_path,
-                                             paste(outcome_var, "time_to_event_plot.png", sep = "_")))
+        drawAttritionDiagram(strata, fileName = file.path(attrition_diagram_folder,
+                                                          paste0("AttritionDiagram_",
+                                                                 str_extract(i,
+                                                                             "l\\d+_s\\d+_p\\d+_t\\d+_c\\d+_s\\d+_o\\d+"),
+                                                                 ".png")))
+        
+        plotFollowUpDistribution(strata, fileName = file.path(follow_up_distribution_folder,
+                                                              paste0("FollowUpDistribution_",
+                                                                     str_extract(i,
+                                                                                 "l\\d+_s\\d+_p\\d+_t\\d+_c\\d+_s\\d+_o\\d+"),
+                                                                     ".png")))
+    }
+    
+    balance_folder <- file.path(tidy_cm_folder, "balance")
+    dir.create(balance_folder)
+    
+    table1_folder <- file.path(tidy_cm_folder, "table1")
+    dir.create(table1_folder)
+    
+    dBalance <- result %>%
+        filter(strataFile != "" & cohortMethodDataFolder != "" ) %>% 
+        distinct(strataFile, cohortMethodDataFolder)
+    
+    for (i in 1:nrow(dBalance)) {
+        strata <- readRDS(file.path(outputFolder, dBalance[[i, "strataFile"]]))
+        cm <- loadCohortMethodData(file.path(outputFolder, dBalance[[i, "cohortMethodDataFolder"]]))
+        
+        balance <- computeCovariateBalance(strata, cm) %>% 
+            drop_na()
+        
+        write_csv(balance, file.path(balance_folder, paste0("Balance_",
+                                                            str_extract(dTrimmedPop[[i, "strataFile"]],
+                                                                        "l\\d+_s\\d+_p\\d+_t\\d+_c\\d+_s\\d+_o\\d+"),
+                                                            ".csv")))
+        
+        plotCovariateBalanceScatterPlot(balance, showCovariateCountLabel = TRUE, showMaxLabel = TRUE,
+                                        fileName = file.path(balance_folder, paste0("BalanceScatterPlot_",
+                                                                                    str_extract(dTrimmedPop[[i, "strataFile"]],
+                                                                                                "l\\d+_s\\d+_p\\d+_t\\d+_c\\d+_s\\d+_o\\d+"),
+                                                                                    ".png")))
+        
+        plotCovariateBalanceOfTopVariables(balance,
+                                           fileName = file.path(balance_folder, paste0("BalanceOfTopVariables_",
+                                                                                       str_extract(dTrimmedPop[[i, "strataFile"]],
+                                                                                                   "l\\d+_s\\d+_p\\d+_t\\d+_c\\d+_s\\d+_o\\d+"),
+                                                                                       ".png")))
+        
+        table1 <- createCmTable1(balance)
+        write_csv(table1, file.path(table1_folder, paste0("Table1_",
+                                                          str_extract(dTrimmedPop[[i, "strataFile"]],
+                                                                      "l\\d+_s\\d+_p\\d+_t\\d+_c\\d+_s\\d+_o\\d+"),
+                                                          ".csv")))
     }
 }
