@@ -142,11 +142,18 @@ draw_attrition_diagram <- function (object, targetLabel = "Target", comparatorLa
 
 
 # print multiple CohortMethod result ------------------------------------------------
-tidy_cm <- function(result, outputFolder) {
+tidy_cm <- function(result, outputFolder,
+                    timeToEvent_riskWindowStart = 0,
+                    timeToEvent_startAnchor = "cohort start",
+                    timeToEvent_riskWindowEnd = 0,
+                    timeToEvent_endAnchor = "cohort end") {
     tidy_cm_folder <- file.path(outputFolder, "tidy_cm")
     dir.create(tidy_cm_folder)
     
     write_csv(result, file.path(tidy_cm_folder, "result.csv"))
+    
+    analysisSum <- summarizeAnalyses(result, outputFolder)
+    write_csv(analysisSum, file.path(outputFolder, "analysisSummary.csv"))
     
     vSharedPsFile <- result %>% 
         filter(sharedPsFile != "") %>% 
@@ -216,6 +223,12 @@ tidy_cm <- function(result, outputFolder) {
                                                                      str_extract(i,
                                                                                  "l\\d+_s\\d+_p\\d+_t\\d+_c\\d+_s\\d+_o\\d+"),
                                                                      ".png")))
+        
+        plotKaplanMeier(strata, fileName = file.path(follow_up_distribution_folder,
+                                                     paste0("KaplanMeier_",
+                                                            str_extract(i,
+                                                                        "l\\d+_s\\d+_p\\d+_t\\d+_c\\d+_s\\d+_o\\d+"),
+                                                            ".png")))
     }
     
     balance_folder <- file.path(tidy_cm_folder, "balance")
@@ -257,5 +270,33 @@ tidy_cm <- function(result, outputFolder) {
                                                           str_extract(dTrimmedPop[[i, "strataFile"]],
                                                                       "l\\d+_s\\d+_p\\d+_t\\d+_c\\d+_s\\d+_o\\d+"),
                                                           ".csv")))
+    }
+    
+    vCmData <- result %>% 
+        filter(cohortMethodDataFolder != "" ) %>% 
+        pull(cohortMethodDataFolder)
+    
+    time_to_event_folder <- file.path(tidy_cm_folder, "time_to_event")
+    dir.create(time_to_event_folder)
+    
+    for (i in vCmData) {
+        cm <- loadCohortMethodData(file.path(outputFolder, i))
+        
+        for (j in unique(cm$outcomes$outcomeId)) {
+            plotTimeToEvent(cohortMethodData = cm,
+                            outcomeId = j,
+                            firstExposureOnly = FALSE,
+                            washoutPeriod = 0,
+                            riskWindowStart = timeToEvent_riskWindowStart,
+                            startAnchor = timeToEvent_startAnchor,
+                            riskWindowEnd = timeToEvent_riskWindowEnd,
+                            endAnchor = timeToEvent_endAnchor,
+                            periodLength = 1,
+                            fileName = file.path(time_to_event_folder, paste0("TimeToEvent_",
+                                                                              str_extract(i, "l\\d+_t\\d+_c\\d+"),
+                                                                              "_o",
+                                                                              j,
+                                                                              ".png")))
+        }
     }
 }
