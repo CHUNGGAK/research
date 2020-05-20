@@ -7,7 +7,7 @@ source("/media/sf_shared_folder/workspace/research/ltool/ltool.R")
 source("/media/sf_shared_folder/workspace/research/ltool/ltool_cm.R")
 source("/media/sf_shared_folder/workspace/connect_information.R")
 
-outputFolder <- file.path(getwd(), "output", patse0("main_", format(Sys.time(), "%Y-%m-%d_%H:%M:%S")))
+outputFolder <- file.path(getwd(), "output", paste0("pneumonia_", format(Sys.time(), "%Y-%m-%d_%H:%M:%S")))
 path_assistant(outputFolder)
 
 excludedCovariateConceptIds <- c(948078,
@@ -19,7 +19,7 @@ excludedCovariateConceptIds <- c(948078,
                                  953076,
                                  # drug_era during day -365 through 0 days relative to index: Famotidine,
                                  948078)
-                                 # drug_era during day -365 through 0 days relative to index: pantoprazol
+# drug_era during day -365 through 0 days relative to index: pantoprazol
 
 # Include precedure and measurement
 covSettings1 <- createCovariateSettings(useDemographicsGender = TRUE,
@@ -62,11 +62,11 @@ getDbCmDataArgs2 <- createGetDbCohortMethodDataArgs(washoutPeriod = 0,
                                                     covariateSettings = covSettings2)
 
 createStudyPopArgs <- createCreateStudyPopulationArgs(removeSubjectsWithPriorOutcome = FALSE,
-                                                       minDaysAtRisk = 0,
-                                                       riskWindowStart = 2,
-                                                       startAnchor = "cohort start",
-                                                       riskWindowEnd = 32,
-                                                       endAnchor = "cohort start")
+                                                      minDaysAtRisk = 0,
+                                                      riskWindowStart = 0,
+                                                      startAnchor = "cohort start",
+                                                      riskWindowEnd = 30,
+                                                      endAnchor = "cohort start")
 
 createPsArgs <- createCreatePsArgs(control = createControl(maxIterations = 3000))
 matchOnPsArgs <- createMatchOnPsArgs(maxRatio = 1)
@@ -102,7 +102,7 @@ cmAnalysis2 <- createCmAnalysis(analysisId = 2,
                                 fitOutcomeModelArgs = fitOutcomeModelArgs1)
 
 cmAnalysis3 <- createCmAnalysis(analysisId = 3,
-                                description = "No matching",
+                                description = "Not matching",
                                 getDbCohortMethodDataArgs = getDbCmDataArgs2,
                                 createStudyPopArgs = createStudyPopArgs,
                                 fitOutcomeModel = TRUE,
@@ -114,17 +114,11 @@ cmAnalysisList <- list(cmAnalysis1, cmAnalysis2, cmAnalysis3)
 
 saveCmAnalysisList(cmAnalysisList, file.path(outputFolder, "cmAnalysisList.json"))
 
-tcos1 <- createTargetComparatorOutcomes(targetId = c(731, # Original
-                                                     736), # >= APACHE score 25
-                                       comparatorId = c(732, # Original
-                                                        737), # >= APACHE score 25
-                                       outcomeIds = 833)
+tcos <- createTargetComparatorOutcomes(targetId = 734, # Pneumonia subgroup
+                                       comparatorId = 735,
+                                       outcomeIds = 1241) # Pneumonia 
 
-tcos2 <- createTargetComparatorOutcomes(targetId = 738, # C. difficile subgroup
-                                        comparatorId = 739,
-                                        outcomeIds = 902) # C. difficile
-
-targetComparatorOutcomesList <- list(tcos1, tcos2)
+targetComparatorOutcomesList <- list(tcos)
 
 saveTargetComparatorOutcomesList(targetComparatorOutcomesList, file.path(outputFolder, "targetComparatorOutcomesList.json"))
 
@@ -143,43 +137,9 @@ result <- runCmAnalyses(connectionDetails = connectionDetails,
                         outputFolder = outputFolder,
                         cmAnalysisList = cmAnalysisList,
                         targetComparatorOutcomesList = targetComparatorOutcomesList)
-write_csv(result, file.path(outputFolder, "analysisResult.csv"))
-
 
 tidy_cm(result, outputFolder,
-        plotTimeToEvent_riskWindowStart = 2,
+        plotTimeToEvent_riskWindowStart = 0,
         plotTimeToEvent_startAnchor = "cohort start",
-        plotTimeToEvent_riskWindowEnd = 32,
-        plotTimeToEvent_endAnchor = "cohort start")
-
-
-# analysisSum <- summarizeAnalyses(result, outputFolder)
-# 
-# hr_table <- data.frame(mean = c(NA, analysisSum$rr),
-#                        lower = c(NA, analysisSum$ci95lb),
-#                        upper = c(NA, analysisSum$ci95ub))
-# hr_index <- complete.cases(analysisSum %>% select(rr, ci95lb, ci95ub))
-# 
-# 
-# description_list <- c()
-# for (i in 1:length(cmAnalysisList)) {
-#   description_list <- c(description_list, get(paste0("cmAnalysis", i))$description)
-# }
-# 
-# labeltext <- cbind(
-#   c("Analysis Summary",
-#     paste0("Outcome ", analysisSum$outcomeId, "; ", rep(description_list, each = length(unique(analysisSum$outcomeId))))[hr_index]),
-#   c("Target", analysisSum$target[hr_index]),
-#   c("Comparator", analysisSum$comparator[hr_index]),
-#   c("Events Target", analysisSum$eventsTarget[hr_index]),
-#   c("Events Comparator", analysisSum$eventsComparator[hr_index]),
-#   c("HR", round(analysisSum$rr[hr_index], 2))
-# )
-# 
-# png("forestplot.png", width = 9600, height = 2400, res = 300)
-# forestplot(labeltext, hr_table[c(TRUE, hr_index), ], 
-#            clip = c(0, 4), graphwidth = unit(210, "mm"), vertices = TRUE,
-#            hrzl_lines = list("2" = gpar(col = "#000000")), boxsize = 0.25,
-#            zero = 1,
-#            col = fpColors(line = "#000000", zero = "#000000"))
-# dev.off()
+        plotTimeToEvent_riskWindowEnd = 30,
+        plotTimeToEvent_endAnchor = "cohort end")
