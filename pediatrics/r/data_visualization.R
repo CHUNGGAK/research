@@ -74,63 +74,96 @@ d_age <- data.frame(time = rep(vTime, each = 5),
 
 # Create Plot Function ------------------------------------------------------------
 create_plot <- function(data, file_name, y) {
-    data %>% 
-        ggplot(aes_string(x = "time", y = y)) +
-        geom_bar(stat = "identity", position = "dodge", aes(fill = type)) +
-        geom_text(position = position_dodge(width = 1),
-                  size = 2.5,
-                  aes(label = paste0(round(data[, y], 2) * 100, "%"),
-                      y = data[, y] + 0.025,
-                      group = type)) + 
-        scale_y_continuous(limits = c(0, 1),
-                           breaks = seq(0, 1, 0.2),
-                           labels = paste0(seq(0, 1, 0.2) * 100, "%")) +
-        scale_fill_grey(start = 0.8, end = 0.2) + 
-        labs(x = NULL, y = NULL) +
-        theme(legend.position = "bottom",
-              legend.title = element_blank(),
-              panel.background = element_rect(fill = "white"),
-              panel.grid.major.x = element_blank(),
-              panel.grid.major.y = element_line(color = "grey"),
-              axis.ticks.x = element_blank()) +
-        guides(fill = guide_legend(nrow = 1))
-    ggsave(paste0(file_name, "_y", y, "_xTime.png"),
-           width = 24, height = 18, units = "cm")
-    ggsave(paste0(file_name, "_y", y, "_xTime.tiff"),
-           width = 24, height = 18, units = "cm",
-           device = "tiff")
-    
-    data %>% 
-        ggplot(aes_string(x = "type", y = y)) +
-        geom_bar(stat = "identity", position = "dodge", aes(fill = time)) +
-        geom_text(position = position_dodge(width = 1),
-                  size = 2.5,
-                  aes(label = paste0(round(data[, y], 2) * 100, "%"),
-                      y = data[, y] + 0.025,
-                      group = time)) + 
-        scale_y_continuous(limits = c(0, 1),
-                           breaks = seq(0, 1, 0.2),
-                           labels = paste0(seq(0, 1, 0.2) * 100, "%")) +
-        scale_fill_grey(start = 0.8, end = 0.2) + 
-        labs(x = NULL, y = NULL) +
-        theme(legend.position = "bottom",
-              legend.title = element_blank(),
-              panel.background = element_rect(fill = "white"),
-              panel.grid.major.x = element_blank(),
-              panel.grid.major.y = element_line(color = "grey"),
-              axis.ticks.x = element_blank()) +
-        guides(fill = guide_legend(nrow = 1))
-    ggsave(paste0(file_name, "_y", y, "_xType.png"),
-           width = 24, height = 18, units = "cm")
-    ggsave(paste0(file_name, "_y", y, "_xType.tiff"),
-           width = 24, height = 18, units = "cm",
-           device = "tiff")
+    if (length(unique(data$type)) == 1) {
+        data %>% 
+            ggplot(aes_string(x = "time", y = y)) +
+            geom_bar(stat = "identity", position = "dodge") +
+            geom_text(position = position_dodge(width = 1),
+                      size = 2.5,
+                      aes(label = paste0(round(data[, y], 2) * 100, "%"),
+                          y = data[, y] + 0.025)) + 
+            scale_y_continuous(limits = c(0, 1),
+                               breaks = seq(0, 1, 0.2),
+                               labels = paste0(seq(0, 1, 0.2) * 100, "%")) +
+            labs(x = NULL, y = NULL) +
+            theme(legend.position = "none",
+                  panel.background = element_rect(fill = "white"),
+                  panel.grid.major.x = element_blank(),
+                  panel.grid.major.y = element_line(color = "grey"),
+                  axis.ticks.x = element_blank())
+        ggsave(paste0(file_name, "_y", y, ".png"),
+               width = 24, height = 18, units = "cm")
+        ggsave(paste0(file_name, "_y", y, ".tiff"),
+               width = 24, height = 18, units = "cm",
+               device = "tiff")
+    } else {
+        data %>% 
+            ggplot(aes_string(x = "time", y = y)) +
+            geom_bar(stat = "identity", position = "dodge", aes(fill = type)) +
+            geom_text(position = position_dodge(width = 1),
+                      size = 2.5,
+                      aes(label = paste0(round(data[, y], 2) * 100, "%"),
+                          y = data[, y] + 0.025,
+                          group = type)) + 
+            scale_y_continuous(limits = c(0, 1),
+                               breaks = seq(0, 1, 0.2),
+                               labels = paste0(seq(0, 1, 0.2) * 100, "%")) +
+            scale_fill_grey(start = 0.8, end = 0.2) + 
+            labs(x = NULL, y = NULL) +
+            theme(legend.position = "bottom",
+                  legend.title = element_blank(),
+                  panel.background = element_rect(fill = "white"),
+                  panel.grid.major.x = element_blank(),
+                  panel.grid.major.y = element_line(color = "grey"),
+                  axis.ticks.x = element_blank()) +
+            guides(fill = guide_legend(nrow = 1))
+        ggsave(paste0(file_name, "_y", y, "_xTime.png"),
+               width = 24, height = 18, units = "cm")
+        ggsave(paste0(file_name, "_y", y, "_xTime.tiff"),
+               width = 24, height = 18, units = "cm",
+               device = "tiff")
+        
+        data %>% 
+            ggplot(aes_string(x = "type", y = y)) +
+            geom_bar(stat = "identity", position = "dodge", aes(fill = time)) +
+            geom_text(position = position_dodge(width = 1),
+                      size = 2.5,
+                      aes(label = paste0(round(data[, y], 2) * 100, "%"),
+                          y = data[, y] + 0.025,
+                          group = time)) + 
+            scale_y_continuous(limits = c(0, 1),
+                               breaks = seq(0, 1, 0.2),
+                               labels = paste0(seq(0, 1, 0.2) * 100, "%")) +
+            scale_fill_grey(start = 0.8, end = 0.2) + 
+            labs(x = NULL, y = NULL) +
+            theme(legend.position = "bottom",
+                  legend.title = element_blank(),
+                  panel.background = element_rect(fill = "white"),
+                  panel.grid.major.x = element_blank(),
+                  panel.grid.major.y = element_line(color = "grey"),
+                  axis.ticks.x = element_blank()) +
+            guides(fill = guide_legend(nrow = 1))
+        ggsave(paste0(file_name, "_y", y, "_xType.png"),
+               width = 24, height = 18, units = "cm")
+        ggsave(paste0(file_name, "_y", y, "_xType.tiff"),
+               width = 24, height = 18, units = "cm",
+               device = "tiff")
+    }
 }
 
 for (var_y in c("overweight", "pooly_controlled")) {
-    create_plot(data = d_type, y = var_y, file_name = file.path(output_path, "Dm"))
-    create_plot(data = d_sex,  y = var_y, file_name = file.path(output_path, "Sex"))
-    create_plot(data = d_age,  y = var_y, file_name = file.path(output_path, "Age"))
+    # for (var_file_name in c("Dm", "Sex", "Age")) {
+    # create_plot(data = d_type, y = var_y, file_name = file.path(output_path, var_file_name))
+    # }
+    
+    for (var_type in c("T1D", "T2D")) {
+        create_plot(data = d_type %>% 
+                        filter(type == var_type),
+                    y = var_y,
+                    file_name = file.path(output_path, var_type))
+    }
 }
 
 create_plot(data = d_type_2, y = "well_controlled", file_name = file.path(output_path, "Dm"))
+
+
