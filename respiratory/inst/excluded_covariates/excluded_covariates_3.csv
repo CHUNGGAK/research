@@ -1,0 +1,179 @@
+covariateName,conceptId
+condition_era group during day -365 through 0 days relative to index: Aortic valve disorder,314054
+drug_era during day -365 through 0 days relative to index: ecabet sodium,43008997
+drug_era group during day -365 through 0 days relative to index: ecabet sodium,43008997
+drug_era group during day -365 through 0 days relative to index: CALCIUM CHANNEL BLOCKERS,21601744
+drug_era during day -365 through 0 days relative to index: fimasartan potassium,43009001
+drug_era group during day -365 through 0 days relative to index: fimasartan potassium,43009001
+condition_occurrence during day -365 through 0 days relative to index: Low back pain,194133
+condition_era group during day -365 through 0 days relative to index: Low back pain,194133
+condition_occurrence during day -365 through 0 days relative to index: Diabetes mellitus without complication,4008576
+condition_era group during day -365 through 0 days relative to index: Diabetes mellitus without complication,4008576
+drug_era during day -365 through 0 days relative to index: lamotrigine,705103
+drug_era group during day -365 through 0 days relative to index: lamotrigine,705103
+drug_era group during day -365 through 0 days relative to index: Other antifungals for topical use,21601939
+condition_era group during day -365 through 0 days relative to index: Neoplasm of soft tissue,4308811
+drug_exposure during day -365 through 0 days relative to index: POLYETHYLENE GLYCOL 3350 / Potassium Chloride / Sodium Bicarbonate / Sodium Chloride Oral Solution,36888525
+drug_exposure during day -365 through 0 days relative to index: Lanolin Ophthalmic Ointment,42967950
+condition_occurrence during day -365 through 0 days relative to index: Acute myocardial infarction of anterior wall,434376
+condition_era group during day -365 through 0 days relative to index: Acute myocardial infarction of anterior wall,434376
+drug_exposure during day -365 through 0 days relative to index: oxaliplatin 50 MG Injection,35604082
+condition_era group during day -365 through 0 days relative to index: Calculus of bile duct,443792
+drug_exposure during day -365 through 0 days relative to index: Valproate,745466
+CHADS2VASc,0
+condition_occurrence during day -365 through 0 days relative to index: Pulmonary emphysema,261325
+condition_era group during day -365 through 0 days relative to index: Pulmonary emphysema,261325
+drug_exposure during day -365 through 0 days relative to index: Rosuvastatin calcium 20 MG Oral Tablet,40165253
+condition_era group during day -365 through 0 days relative to index: Musculoskeletal disorder of the neck,133298
+condition_era group during day -365 through 0 days relative to index: Cranial nerve disorder,441848
+condition_occurrence during day -365 through 0 days relative to index: Arteriosclerosis obliterans,4262560
+condition_era group during day -365 through 0 days relative to index: Arteriosclerosis obliterans,4262560
+measurement during day -365 through 0 days relative to index: Neutrophil cytoplasmic Ab [Titer] in Serum by Immunofluorescence,3040147
+drug_era during day -365 through 0 days relative to index: bepotastine,40166571
+drug_era group during day -365 through 0 days relative to index: bepotastine,40166571
+drug_exposure during day -365 through 0 days relative to index: Sodium Chloride 2 MEQ/ML,968038
+measurement during day -365 through 0 days relative to index: Triiodothyronine (T3) [Mass/volume] in Serum or Plasma,3010340
+condition_era group during day -365 through 0 days relative to index: Thoracoabdominal aortic aneurysm,436996
+condition_era group during day -365 through 0 days relative to index: Abnormality of thoracoabdominal aorta,40488440
+condition_era group during day -365 through 0 days relative to index: Malignant neoplasm of respiratory system,40493428
+condition_era group during day -365 through 0 days relative to index: Neoplasm of respiratory tract,252280
+drug_era during day -365 through 0 days relative to index: Calcitriol,19035631
+drug_era group during day -365 through 0 days relative to index: Calcitriol,19035631
+drug_era group during day -365 through 0 days relative to index: ANTIPSORIATICS,21602028
+drug_era group during day -365 through 0 days relative to index: ANTIPSORIATICS FOR TOPICAL USE,21602029
+drug_era group during day -365 through 0 days relative to index: Other antipsoriatics for topical use,21602037
+condition_era group during day -365 through 0 days relative to index: Tumor of respiratory system,40491439
+condition_era group during day -365 through 0 days relative to index: Mass of respiratory structure,4115105
+measurement during day -365 through 0 days relative to index: Myoglobin [Mass/volume] in Urine,3011066
+condition_era group during day -365 through 0 days relative to index: Lesion of brainstem,42538613
+drug_exposure during day -365 through 0 days relative to index: Hydromorphone Hydrochloride 1 MG/ML Injection,35603580
+condition_era group during day -365 through 0 days relative to index: Intracranial injury,437409
+drug_exposure during day -365 through 0 days relative to index: Ascorbic Acid 100 MG Injectable Solution,41274826
+condition_occurrence during day -365 through 0 days relative to index: Perinatal intraventricular hemorrhage,436519
+condition_era group during day -365 through 0 days relative to index: Perinatal intraventricular hemorrhage,436519
+condition_era group during day -365 through 0 days relative to index: Perinatal intracranial hemorrhage,4174299
+condition_era group during day -365 through 0 days relative to index: Perinatal disorder,4187201
+condition_era group during day -365 through 0 days relative to index: Intracerebral hemorrhage in fetus or newborn,4345688
+condition_era group during day -365 through 0 days relative to index: Perinatal hemorrhage,42872438
+condition_era group during day -365 through 0 days relative to index: Malignant neoplasm of thorax,80665
+drug_exposure during day -365 through 0 days relative to index: Fexofenadine hydrochloride 120 MG Oral Tablet,40223807
+condition_era group during day -365 through 0 days relative to index: Neoplasm of thorax,4111018
+drug_exposure during day -365 through 0 days relative to index: eprosartan 600 MG,19084947
+condition_era group during day -365 through 0 days relative to index: Mass of thoracic structure,4233903
+condition_era group during day -365 through 0 days relative to index: Acute heart disease,4132088
+condition_era group during day -365 through 0 days relative to index: Perforation of intestine,193242
+drug_exposure during day -365 through 0 days relative to index: Dutasteride 0.5 MG Oral Capsule,989485
+condition_era group during day -365 through 0 days relative to index: Lacunar infarction,4046360
+drug_era during day -365 through 0 days relative to index: oxiracetam,19082891
+drug_era group during day -365 through 0 days relative to index: oxiracetam,19082891
+condition_occurrence during day -365 through 0 days relative to index: Multiple injuries,4096313
+condition_era group during day -365 through 0 days relative to index: Multiple injuries,4096313
+measurement during day -365 through 0 days relative to index: Urea nitrogen [Mass/volume] in 24 hour Urine,3015608
+drug_era during day -365 through 0 days relative to index: Baclofen,715233
+drug_era group during day -365 through 0 days relative to index: Baclofen,715233
+drug_era during day -365 through 0 days relative to index: oxaliplatin,1318011
+drug_era group during day -365 through 0 days relative to index: oxaliplatin,1318011
+drug_era group during day -365 through 0 days relative to index: Platinum compounds,21603747
+drug_era during day -365 through 0 days relative to index: hemocoagulase,43009090
+drug_era group during day -365 through 0 days relative to index: hemocoagulase,43009090
+drug_exposure during day -365 through 0 days relative to index: atorvastatin 40 MG,1545994
+condition_era group during day -365 through 0 days relative to index: Neoplastic disease,438112
+drug_exposure during day -365 through 0 days relative to index: 20 ML Megestrol 40 MG/ML Oral Suspension,42920254
+drug_era during day -365 through 0 days relative to index: Doxycycline,1738521
+drug_era group during day -365 through 0 days relative to index: Doxycycline,1738521
+measurement during day -365 through 0 days relative to index: Hepatitis B virus core IgM Ab [Presence] in Serum or Plasma by Immunoassay,3022560
+condition_era group during day -365 through 0 days relative to index: Inflammatory disease of mucous membrane,432661
+drug_era during day -365 through 0 days relative to index: ulinastatin,43009071
+drug_era group during day -365 through 0 days relative to index: ulinastatin,43009071
+measurement during day -365 through 0 days relative to index: Nonpharmacologic intervention for pain,21492834
+condition_era group during day -365 through 0 days relative to index: Neoplasm of trunk,4054501
+drug_exposure during day -365 through 0 days relative to index: 5 ML palonosetron 0.05 MG/ML Injection,35604693
+drug_exposure during day -365 through 0 days relative to index: pantoprazole 20 MG Oral Tablet,41271459
+index year: 2011,0
+drug_era during day -365 through 0 days relative to index: cobamamide,19048026
+drug_era group during day -365 through 0 days relative to index: cobamamide,19048026
+condition_era group during day -365 through 0 days relative to index: Primary malignant neoplasm of respiratory tract,4311499
+drug_exposure during day -365 through 0 days relative to index: Benzydamine Hydrochloride 1.5 MG/ML Mouthwash,42707728
+measurement during day -365 through 0 days relative to index: Methicillin resistant Staphylococcus aureus (MRSA) DNA [Presence] in Unspecified specimen by NAA with probe detection,3033966
+drug_exposure during day -365 through 0 days relative to index: Granisetron 3 MG,19110082
+drug_exposure during day -365 through 0 days relative to index: 2 ML cobamamide 0.5 MG/ML Injectable Solution,42922096
+drug_era group during day -365 through 0 days relative to index: Vinca alkaloids and analogues,21601446
+drug_era during day -365 through 0 days relative to index: propiverine,19077093
+drug_era group during day -365 through 0 days relative to index: propiverine,19077093
+drug_exposure during day -365 through 0 days relative to index: Oseltamivir 75 MG Oral Capsule,1799141
+condition_occurrence during day -365 through 0 days relative to index: Malignant lymphoma,432571
+drug_era during day -365 through 0 days relative to index: Vincristine,1308290
+drug_era group during day -365 through 0 days relative to index: Vincristine,1308290
+condition_occurrence during day -365 through 0 days relative to index: Tension-type headache,376382
+condition_era group during day -365 through 0 days relative to index: Tension-type headache,376382
+condition_occurrence during day -365 through 0 days relative to index: Laboratory test result abnormal,4012972
+drug_exposure during day -365 through 0 days relative to index: Leucovorin 100 MG Injection,40220871
+drug_exposure during day -365 through 0 days relative to index: Meperidine Hydrochloride 25 MG/ML Injection,46287332
+drug_exposure during day -365 through 0 days relative to index: carvedilol 12.5 MG,1346830
+"condition_occurrence during day -365 through 0 days relative to index: Intracerebral hemorrhage, intraventricular",4110185
+"condition_era group during day -365 through 0 days relative to index: Intracerebral hemorrhage, intraventricular",4110185
+drug_exposure during day -365 through 0 days relative to index: 3 ML Insulin Lispro 100 UNT/ML Injection,43280608
+condition_occurrence during day -365 through 0 days relative to index: Abnormal sputum,433596
+condition_era group during day -365 through 0 days relative to index: Rhinitis,4320791
+condition_era group during day -365 through 0 days relative to index: Pathological fracture,73571
+condition_occurrence during day -365 through 0 days relative to index: Pathological fracture due to osteoporosis,40480160
+condition_era group during day -365 through 0 days relative to index: Pathological fracture due to osteoporosis,40480160
+drug_exposure during day -365 through 0 days relative to index: peramivir 10 MG/ML Injection,35606450
+drug_era during day -365 through 0 days relative to index: peramivir,40167569
+drug_era group during day -365 through 0 days relative to index: peramivir,40167569
+drug_era during day -365 through 0 days relative to index: cefdinir,1796458
+drug_era group during day -365 through 0 days relative to index: cefdinir,1796458
+measurement during day -365 through 0 days relative to index: Breath rate spontaneous,1175625
+condition_occurrence during day -365 through 0 days relative to index: Non-traumatic intracranial subdural hematoma,4106058
+condition_era group during day -365 through 0 days relative to index: Non-traumatic intracranial subdural hematoma,4106058
+condition_era group during day -365 through 0 days relative to index: Non-traumatic subdural hemorrhage,4111709
+condition_era group during day -365 through 0 days relative to index: Non-traumatic hematoma of subdural space of neuraxis,42709925
+drug_exposure during day -365 through 0 days relative to index: carvedilol 3.125 MG Oral Tablet,1346990
+drug_era during day -365 through 0 days relative to index: etizolam,43009000
+drug_era group during day -365 through 0 days relative to index: etizolam,43009000
+index year: 2010,0
+condition_occurrence during day -365 through 0 days relative to index: Non-small cell lung cancer,4115276
+condition_era group during day -365 through 0 days relative to index: Non-small cell lung cancer,4115276
+observation during day -365 through 0 days relative to index: Sites of distant metastasis,3042814
+drug_exposure during day -365 through 0 days relative to index: iron acetyl transferrin 200 MG Oral Capsule,42959687
+drug_era during day -365 through 0 days relative to index: iron acetyl transferrin,43009021
+drug_era group during day -365 through 0 days relative to index: iron acetyl transferrin,43009021
+condition_era group during day -365 through 0 days relative to index: Primary malignant neoplasm of pancreas,199754
+drug_exposure during day -365 through 0 days relative to index: 500 ML Glucose 100 MG/ML Injection,36249709
+condition_occurrence during day -365 through 0 days relative to index: Primary malignant neoplasm of pancreas,199754
+drug_exposure during day -365 through 0 days relative to index: Ginkgo biloba extract 40 MG Oral Tablet,1391913
+condition_era group during day -365 through 0 days relative to index: Ischemic stroke,4310996
+drug_era during day -365 through 0 days relative to index: alteplase,1347450
+drug_era group during day -365 through 0 days relative to index: alteplase,1347450
+drug_exposure during day -365 through 0 days relative to index: Trimetazidine 35 MG Extended Release Oral Tablet,19108062
+drug_era during day -365 through 0 days relative to index: Trimetazidine,19005626
+drug_era group during day -365 through 0 days relative to index: Trimetazidine,19005626
+measurement during day -365 through 0 days relative to index: Direct antiglobulin test.poly specific reagent [Presence] on Red Blood Cells,3022907
+drug_exposure during day -365 through 0 days relative to index: Amoxicillin / Clavulanate Oral Tablet,40105046
+index year: 2015,0
+condition_occurrence during day -365 through 0 days relative to index: Liquid stool,4162369
+condition_era group during day -365 through 0 days relative to index: Liquid stool,4162369
+drug_era during day -365 through 0 days relative to index: Omeprazole,923645
+drug_era group during day -365 through 0 days relative to index: Omeprazole,923645
+drug_era group during day -365 through 0 days relative to index: Other antidepressants,21604729
+condition_era group during day -365 through 0 days relative to index: Infection due to anaerobic bacteria,4309542
+condition_occurrence during day -365 through 0 days relative to index: Disorder of rotator cuff,4212887
+drug_exposure during day -365 through 0 days relative to index: Trazodone 25 MG,19109758
+procedure_occurrence during day -365 through 0 days relative to index: Extracorporeal membrane oxygenation,4052536
+condition_era group during day -365 through 0 days relative to index: Benign neoplasm of abdomen,4114336
+condition_era group during day -365 through 0 days relative to index: Benign neoplasm of intra-abdominal organs,4239897
+condition_era group during day -365 through 0 days relative to index: Benign neoplasm of trunk,4242980
+drug_exposure during day -365 through 0 days relative to index: 20 ML Bupivacaine 5 MG/ML Injectable Solution,36895768
+procedure_occurrence during day -365 through 0 days relative to index: Arteriectomy with graft replacement of thoracic aorta,4138676
+drug_exposure during day -365 through 0 days relative to index: 1000 ML Sodium Chloride 4.5 MG/ML Injection,40221369
+condition_era group during day -365 through 0 days relative to index: Respiratory distress,4158346
+condition_occurrence during day -365 through 0 days relative to index: Malignant tumor of stomach,443387
+drug_exposure during day -365 through 0 days relative to index: prednicarbate Topical Lotion,42967109
+drug_exposure during day -365 through 0 days relative to index: Acetaminophen 300 MG Oral Tablet,19096574
+drug_era during day -365 through 0 days relative to index: Chlorphenesin,19092712
+drug_era group during day -365 through 0 days relative to index: Chlorphenesin,19092712
+condition_era group during day -365 through 0 days relative to index: Lumbar radiculopathy,4134121
+drug_exposure during day -365 through 0 days relative to index: tolterodine tartrate 2 MG Extended Release Oral Capsule,40163787
+drug_exposure during day -365 through 0 days relative to index: Carboplatin 50 MG Injectable Solution,41087078
+condition_era group during day -365 through 0 days relative to index: Observation of sensation,4154801
+drug_exposure during day -365 through 0 days relative to index: Ceftizoxime 1000 MG Injection,42944728

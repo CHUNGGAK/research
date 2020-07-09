@@ -2,97 +2,139 @@ setwd("/home/lee/workspace/respiratory")
 
 library(CohortMethod)
 library(forestplot)
+library(data.table)
+library(tidyverse)
 
-source("/media/sf_shared_folder/workspace/research/ltool/ltool.R")
-source("/media/sf_shared_folder/workspace/research/ltool/ltool_cm.R")
-source("/media/sf_shared_folder/workspace/connect_information.R")
+source("/media/sf_sf/workspace/connection_details.R")
+source("/media/sf_sf/workspace/ltool/ltool_cm.R")
 
-outputFolder <- file.path(getwd(), "output", patse0("main_", format(Sys.time(), "%Y-%m-%d_%H:%M:%S")))
-path_assistant(outputFolder)
+outputFolder <- file.path(getwd(), "output", paste0(format(Sys.time(), "%Y-%m-%d_%H:%M:%S")))
+dir.create(outputFolder)
 
-excludedCovariateConceptIds <- c(948078,
-                                 # drug_era group during day -365 through 0 days relative to index: pantoprazole
-                                 21600081,
-                                 # drug_era group during day -365 through 0 days relative to index: H2-receptor antagonists,
-                                 21600095,
-                                 # drug_era group during day -365 through 0 days relative to index: Proton pump inhibitors,
-                                 953076,
-                                 # drug_era during day -365 through 0 days relative to index: Famotidine,
-                                 948078)
-                                 # drug_era during day -365 through 0 days relative to index: pantoprazol
+excluded_covariates_1 <- read_csv("/media/sf_sf/workspace/respiratory/data/excluded_covariates/excluded_covariates.csv")
+excluded_covariates_2 <- read_csv("/media/sf_sf/workspace/respiratory/data/excluded_covariates/excluded_covariates_2.csv")
+excluded_covariates_3 <- read_csv("/media/sf_sf/workspace/respiratory/data/excluded_covariates/excluded_covariates_3.csv")
+
+excludedCovariateConceptIds <- c(941047, 950696, 4009003, 953076, 997276, # H2 receptor
+                                 21600095, # PPI
+                                 948078, # pantoprazole
+                                 948080, # pantoprazole 40 MG Injection,
+                                 21600046, # DRUGS FOR ACID RELATED DISORDERS,
+                                 21600080, # DRUGS FOR PEPTIC ULCER AND GASTRO-OESOPHAGEAL REFLUX DISEASE (GORD)
+                                 19077241, # Famotidine 20 MG Oral Tablet
+                                 excluded_covariates_1$conceptId, # Balance value is above 0.1
+                                 excluded_covariates_2$conceptId,
+                                 excluded_covariates_3$conceptId)
 
 # Include precedure and measurement
-covSettings1 <- createCovariateSettings(useDemographicsGender = TRUE,
-                                        useDemographicsAge = TRUE,
-                                        useConditionGroupEraLongTerm = TRUE,
-                                        useDrugEraLongTerm = TRUE,
-                                        useProcedureOccurrenceLongTerm = TRUE,
-                                        useMeasurementLongTerm = TRUE,
-                                        useObservationLongTerm = TRUE,
-                                        useCharlsonIndex = TRUE,
-                                        useChads2Vasc = TRUE,
-                                        excludedCovariateConceptIds = excludedCovariateConceptIds)
+covSettings <- createCovariateSettings(useDemographicsGender = TRUE,
+                                       useDemographicsAge = TRUE,
+                                       useDemographicsIndexYear = TRUE,
+                                       useConditionGroupEraLongTerm = TRUE,
+                                       useDrugEraLongTerm = TRUE,
+                                       useDrugGroupEraLongTerm = TRUE,
+                                       useConditionOccurrenceLongTerm = TRUE,
+                                       useDrugExposureLongTerm = TRUE,
+                                       useProcedureOccurrenceLongTerm = TRUE,
+                                       useMeasurementLongTerm = TRUE,
+                                       useObservationLongTerm = TRUE,
+                                       useCharlsonIndex = TRUE,
+                                       useChads2Vasc = TRUE,
+                                       excludedCovariateConceptIds = excludedCovariateConceptIds)
 
-# Enclude precedure and measurement
-covSettings2 <- createCovariateSettings(useDemographicsGender = TRUE,
-                                        useDemographicsAge = TRUE,
-                                        useConditionGroupEraLongTerm = TRUE,
-                                        useDrugEraLongTerm = TRUE,
-                                        useObservationLongTerm = TRUE,
-                                        useCharlsonIndex = TRUE,
-                                        useChads2Vasc = TRUE,
-                                        excludedCovariateConceptIds = excludedCovariateConceptIds)
-
-getDbCmDataArgs1 <- createGetDbCohortMethodDataArgs(washoutPeriod = 0,
+getDbCmDataArgs <- createGetDbCohortMethodDataArgs(washoutPeriod = 0,
                                                     restrictToCommonPeriod = FALSE,
                                                     firstExposureOnly = FALSE,
                                                     removeDuplicateSubjects = "remove all",
                                                     studyStartDate = "",
                                                     studyEndDate = "",
                                                     excludeDrugsFromCovariates = TRUE,
-                                                    covariateSettings = covSettings1)
-
-getDbCmDataArgs2 <- createGetDbCohortMethodDataArgs(washoutPeriod = 0,
-                                                    restrictToCommonPeriod = FALSE,
-                                                    firstExposureOnly = FALSE,
-                                                    removeDuplicateSubjects = "remove all",
-                                                    studyStartDate = "",
-                                                    studyEndDate = "",
-                                                    excludeDrugsFromCovariates = TRUE,
-                                                    covariateSettings = covSettings2)
+                                                    covariateSettings = covSettings)
 
 createStudyPopArgs <- createCreateStudyPopulationArgs(removeSubjectsWithPriorOutcome = FALSE,
-                                                       minDaysAtRisk = 0,
-                                                       riskWindowStart = 2,
-                                                       startAnchor = "cohort start",
-                                                       riskWindowEnd = 32,
-                                                       endAnchor = "cohort start")
+                                                      minDaysAtRisk = 0,
+                                                      riskWindowStart = 3,
+                                                      startAnchor = "cohort start",
+                                                      riskWindowEnd = 33,
+                                                      endAnchor = "cohort start")
 
-createPsArgs <- createCreatePsArgs(control = createControl(maxIterations = 3000))
+# createPsArgs <- createCreatePsArgs(control = createControl(maxIterations = 3000))
+createPsArgs <- createCreatePsArgs()
 matchOnPsArgs <- createMatchOnPsArgs(maxRatio = 1)
+trimByPsArgs <- createTrimByPsArgs()
+trimByPsToEquipoiseArgs <- createTrimByPsToEquipoiseArgs()
 
-# 1:1 matching
+# Cox
 fitOutcomeModelArgs1 <- createFitOutcomeModelArgs(modelType = "cox",
                                                   stratified = TRUE)
 
-# No matching
-fitOutcomeModelArgs2 <- createFitOutcomeModelArgs(modelType = "cox",
+# Logistic
+fitOutcomeModelArgs2 <- createFitOutcomeModelArgs(modelType = "logistic",
+                                                  stratified = TRUE)
+
+# Cox
+fitOutcomeModelArgs3 <- createFitOutcomeModelArgs(modelType = "cox",
+                                                  stratified = FALSE)
+
+# Logistic
+fitOutcomeModelArgs4 <- createFitOutcomeModelArgs(modelType = "logistic",
                                                   stratified = FALSE)
 
 cmAnalysis1 <- createCmAnalysis(analysisId = 1,
-                                description = "1:1 matching; Include procedure, measurement covariates",
-                                getDbCohortMethodDataArgs = getDbCmDataArgs1,
+                                description = "Cox; Trim to equipoise + 1:1 Matching",
+                                getDbCohortMethodDataArgs = getDbCmDataArgs,
                                 createStudyPopArgs = createStudyPopArgs,
                                 createPs = TRUE,
                                 createPsArgs = createPsArgs,
+                                trimByPsToEquipoise = TRUE,
+                                trimByPsToEquipoiseArgs = trimByPsToEquipoiseArgs,
                                 matchOnPs = TRUE,
                                 matchOnPsArgs = matchOnPsArgs,
                                 fitOutcomeModel = TRUE,
                                 fitOutcomeModelArgs = fitOutcomeModelArgs1)
 
 cmAnalysis2 <- createCmAnalysis(analysisId = 2,
-                                description = "1:1 matching; Exclude procedure, measurement covariates",
-                                getDbCohortMethodDataArgs = getDbCmDataArgs2,
+                                description = "Logistic; Trim to equipoise + 1:1 Matching",
+                                getDbCohortMethodDataArgs = getDbCmDataArgs,
+                                createStudyPopArgs = createStudyPopArgs,
+                                createPs = TRUE,
+                                createPsArgs = createPsArgs,
+                                trimByPsToEquipoise = TRUE,
+                                trimByPsToEquipoiseArgs = trimByPsToEquipoiseArgs,
+                                matchOnPs = TRUE,
+                                matchOnPsArgs = matchOnPsArgs,
+                                fitOutcomeModel = TRUE,
+                                fitOutcomeModelArgs = fitOutcomeModelArgs2)
+
+cmAnalysis3 <- createCmAnalysis(analysisId = 3,
+                                description = "Cox; Trim + 1:1 Matching",
+                                getDbCohortMethodDataArgs = getDbCmDataArgs,
+                                createStudyPopArgs = createStudyPopArgs,
+                                createPs = TRUE,
+                                createPsArgs = createPsArgs,
+                                trimByPs = TRUE,
+                                trimByPsArgs = trimByPsArgs,
+                                matchOnPs = TRUE,
+                                matchOnPsArgs = matchOnPsArgs,
+                                fitOutcomeModel = TRUE,
+                                fitOutcomeModelArgs = fitOutcomeModelArgs1)
+
+cmAnalysis4 <- createCmAnalysis(analysisId = 4,
+                                description = "Logistic; Trim + 1:1 Matching",
+                                getDbCohortMethodDataArgs = getDbCmDataArgs,
+                                createStudyPopArgs = createStudyPopArgs,
+                                createPs = TRUE,
+                                createPsArgs = createPsArgs,
+                                trimByPs = TRUE,
+                                trimByPsArgs = trimByPsArgs,
+                                matchOnPs = TRUE,
+                                matchOnPsArgs = matchOnPsArgs,
+                                fitOutcomeModel = TRUE,
+                                fitOutcomeModelArgs = fitOutcomeModelArgs2)
+
+cmAnalysis5 <- createCmAnalysis(analysisId = 5,
+                                description = "Cox; 1:1 Matching",
+                                getDbCohortMethodDataArgs = getDbCmDataArgs,
                                 createStudyPopArgs = createStudyPopArgs,
                                 createPs = TRUE,
                                 createPsArgs = createPsArgs,
@@ -101,30 +143,53 @@ cmAnalysis2 <- createCmAnalysis(analysisId = 2,
                                 fitOutcomeModel = TRUE,
                                 fitOutcomeModelArgs = fitOutcomeModelArgs1)
 
-cmAnalysis3 <- createCmAnalysis(analysisId = 3,
-                                description = "No matching",
-                                getDbCohortMethodDataArgs = getDbCmDataArgs2,
+cmAnalysis6 <- createCmAnalysis(analysisId = 6,
+                                description = "Logistic; 1:1 Matching",
+                                getDbCohortMethodDataArgs = getDbCmDataArgs,
                                 createStudyPopArgs = createStudyPopArgs,
+                                createPs = TRUE,
+                                createPsArgs = createPsArgs,
+                                matchOnPs = TRUE,
+                                matchOnPsArgs = matchOnPsArgs,
                                 fitOutcomeModel = TRUE,
                                 fitOutcomeModelArgs = fitOutcomeModelArgs2)
 
+cmAnalysis7 <- createCmAnalysis(analysisId = 7,
+                                description = "No matching; Cox",
+                                getDbCohortMethodDataArgs = getDbCmDataArgs,
+                                createStudyPopArgs = createStudyPopArgs,
+                                fitOutcomeModel = TRUE,
+                                fitOutcomeModelArgs = fitOutcomeModelArgs3)
+
+cmAnalysis8 <- createCmAnalysis(analysisId = 8,
+                                description = "No matching; Logistic",
+                                getDbCohortMethodDataArgs = getDbCmDataArgs,
+                                createStudyPopArgs = createStudyPopArgs,
+                                fitOutcomeModel = TRUE,
+                                fitOutcomeModelArgs = fitOutcomeModelArgs4)
 
 
-cmAnalysisList <- list(cmAnalysis1, cmAnalysis2, cmAnalysis3)
+
+cmAnalysisList <- list(cmAnalysis1, cmAnalysis2, cmAnalysis3, cmAnalysis4,
+                       cmAnalysis5, cmAnalysis6, cmAnalysis7, cmAnalysis8)
 
 saveCmAnalysisList(cmAnalysisList, file.path(outputFolder, "cmAnalysisList.json"))
 
-tcos1 <- createTargetComparatorOutcomes(targetId = c(731, # Original
-                                                     736), # >= APACHE score 25
-                                       comparatorId = c(732, # Original
-                                                        737), # >= APACHE score 25
-                                       outcomeIds = 833)
+tcos1 <- createTargetComparatorOutcomes(targetId = c(751, # Original
+                                                     756), # >= APACHE score 25
+                                        comparatorId = c(752, # Original
+                                                         757), # >= APACHE score 25
+                                        outcomeIds = 833)
 
-tcos2 <- createTargetComparatorOutcomes(targetId = 738, # C. difficile subgroup
-                                        comparatorId = 739,
+tcos2 <- createTargetComparatorOutcomes(targetId = 758, # C. difficile subgroup
+                                        comparatorId = 759,
                                         outcomeIds = 902) # C. difficile
 
-targetComparatorOutcomesList <- list(tcos1, tcos2)
+tcos3 <- createTargetComparatorOutcomes(targetId = 754, # Pneumonia subgroup
+                                       comparatorId = 755,
+                                       outcomeIds = 1241) # Pneumonia 
+
+targetComparatorOutcomesList <- list(tcos1, tcos2, tcos3)
 
 saveTargetComparatorOutcomesList(targetComparatorOutcomesList, file.path(outputFolder, "targetComparatorOutcomesList.json"))
 
@@ -143,43 +208,11 @@ result <- runCmAnalyses(connectionDetails = connectionDetails,
                         outputFolder = outputFolder,
                         cmAnalysisList = cmAnalysisList,
                         targetComparatorOutcomesList = targetComparatorOutcomesList)
-write_csv(result, file.path(outputFolder, "analysisResult.csv"))
-
 
 tidy_cm(result, outputFolder,
-        plotTimeToEvent_riskWindowStart = 2,
+        plotTimeToEvent_riskWindowStart = 3,
         plotTimeToEvent_startAnchor = "cohort start",
-        plotTimeToEvent_riskWindowEnd = 32,
-        plotTimeToEvent_endAnchor = "cohort start")
-
-
-# analysisSum <- summarizeAnalyses(result, outputFolder)
-# 
-# hr_table <- data.frame(mean = c(NA, analysisSum$rr),
-#                        lower = c(NA, analysisSum$ci95lb),
-#                        upper = c(NA, analysisSum$ci95ub))
-# hr_index <- complete.cases(analysisSum %>% select(rr, ci95lb, ci95ub))
-# 
-# 
-# description_list <- c()
-# for (i in 1:length(cmAnalysisList)) {
-#   description_list <- c(description_list, get(paste0("cmAnalysis", i))$description)
-# }
-# 
-# labeltext <- cbind(
-#   c("Analysis Summary",
-#     paste0("Outcome ", analysisSum$outcomeId, "; ", rep(description_list, each = length(unique(analysisSum$outcomeId))))[hr_index]),
-#   c("Target", analysisSum$target[hr_index]),
-#   c("Comparator", analysisSum$comparator[hr_index]),
-#   c("Events Target", analysisSum$eventsTarget[hr_index]),
-#   c("Events Comparator", analysisSum$eventsComparator[hr_index]),
-#   c("HR", round(analysisSum$rr[hr_index], 2))
-# )
-# 
-# png("forestplot.png", width = 9600, height = 2400, res = 300)
-# forestplot(labeltext, hr_table[c(TRUE, hr_index), ], 
-#            clip = c(0, 4), graphwidth = unit(210, "mm"), vertices = TRUE,
-#            hrzl_lines = list("2" = gpar(col = "#000000")), boxsize = 0.25,
-#            zero = 1,
-#            col = fpColors(line = "#000000", zero = "#000000"))
-# dev.off()
+        plotTimeToEvent_riskWindowEnd = 33,
+        plotTimeToEvent_endAnchor = "cohort start",
+        plotTimeToEvent_showFittedLines = FALSE,
+        plotKaplanMeier = FALSE)
